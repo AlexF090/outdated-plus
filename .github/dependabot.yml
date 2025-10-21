@@ -1,0 +1,53 @@
+version: 2
+updates:
+  # Enable version updates for npm
+  - package-ecosystem: 'npm'
+    directory: '/'
+    schedule:
+      interval: 'weekly'
+      day: 'monday'
+      time: '09:00'
+    open-pull-requests-limit: 10
+    reviewers:
+      - 'AlexF090'
+    assignees:
+      - 'AlexF090'
+    commit-message:
+      prefix: 'deps'
+      include: 'scope'
+    # Allow security updates even for major versions
+    allow:
+      - dependency-type: 'direct'
+      - dependency-type: 'indirect'
+    labels:
+      - 'dependencies'
+      - 'automated'
+    # Ignore major version updates for now to avoid breaking changes
+    # But allow security updates even for major versions
+    ignore:
+      - dependency-name: '*'
+        update-types: ['version-update:semver-major']
+    # Group minor and patch updates together
+    groups:
+      development-dependencies:
+        patterns:
+          - '@types/*'
+          - 'eslint*'
+          - 'prettier*'
+          - 'typescript'
+          - 'vitest'
+        update-types:
+          - 'minor'
+          - 'patch'
+      production-dependencies:
+        patterns:
+          - '*'
+        exclude-patterns:
+          - '@types/*'
+          - 'eslint*'
+          - 'prettier*'
+          - 'typescript'
+          - 'vitest'
+        update-types:
+          - 'minor'
+          - 'patch'
