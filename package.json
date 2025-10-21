@@ -7,7 +7,9 @@
     "npm-outdated-with-dates": "dist/cli.js"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:run": "vitest run",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/cli.js",
     "dev": "tsc -w"
@@ -18,7 +20,6 @@
   "type": "commonjs",
   "devDependencies": {
     "@types/node": "^24.9.1",
-    "typescript": "^5.9.3",
     "eslint": "^9.35.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-cypress": "^5.1.1",
@@ -29,6 +30,8 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-risxss": "^2.1.0",
     "eslint-plugin-unicode-comments": "^2.0.1",
-    "prettier": "^3.6.2"
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
   }
 }
