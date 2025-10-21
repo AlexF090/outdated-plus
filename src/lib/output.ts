@@ -1,5 +1,29 @@
 import type { Row } from './types.js';
 
+export function printSkippedInfo(
+  skippedPackages: string[],
+  format: 'plain' | 'tsv' | 'md',
+) {
+  if (skippedPackages.length === 0) {
+    return;
+  }
+
+  const message = `Skipped ${skippedPackages.length} package(s): ${skippedPackages.join(', ')}`;
+
+  switch (format) {
+    case 'tsv':
+      console.log(`# ${message}`);
+      break;
+    case 'md':
+      console.log(`> **Note:** ${message}`);
+      console.log('');
+      break;
+    default:
+      console.log(`i  ${message}`);
+      console.log('');
+  }
+}
+
 export function printPlain(rows: Row[]) {
   const headers = [
     'Package',

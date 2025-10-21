@@ -105,4 +105,34 @@ describe('parseArgs', () => {
       expect(result.format).toBe(format);
     }
   });
+
+  it('should parse skip packages from command line', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--skip',
+      'react,vue,angular',
+    ]);
+    expect(result.skip).toEqual(['react', 'vue', 'angular']);
+  });
+
+  it('should handle single skip package', () => {
+    const result = parseArgs(['node', 'script.js', '--skip', 'react']);
+    expect(result.skip).toEqual(['react']);
+  });
+
+  it('should handle skip packages with spaces', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--skip',
+      'react, vue , angular',
+    ]);
+    expect(result.skip).toEqual(['react', 'vue', 'angular']);
+  });
+
+  it('should default to empty skip array when no skip options provided', () => {
+    const result = parseArgs(['node', 'script.js']);
+    expect(result.skip).toEqual([]);
+  });
 });

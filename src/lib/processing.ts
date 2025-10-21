@@ -1,5 +1,11 @@
 import type { Args, Meta, OutdatedMap, Row } from './types.js';
-import { bumpType, daysAgo, fmtTime, parseIsoZ } from './utils.js';
+import {
+  bumpType,
+  daysAgo,
+  fmtTime,
+  parseIsoZ,
+  shouldSkipPackage,
+} from './utils.js';
 
 export function buildRows(
   outdated: OutdatedMap,
@@ -7,9 +13,22 @@ export function buildRows(
   showAll: boolean,
   cutoffDays: number,
   useIso: boolean,
+  skipPackages: string[] = [],
 ): Row[] {
   const rows: Row[] = [];
   for (const [pkg, info] of Object.entries(outdated)) {
+    // Skip packages based on version-specific skip logic
+    if (
+      shouldSkipPackage(
+        pkg,
+        info.current,
+        info.wanted,
+        info.latest,
+        skipPackages,
+      )
+    ) {
+      continue;
+    }
     const current = info.current ?? '';
     const wanted = info.wanted ?? '';
     const latestFromOut = info.latest ?? '';

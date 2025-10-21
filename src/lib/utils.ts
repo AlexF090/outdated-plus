@@ -67,3 +67,54 @@ export function bumpType(
   }
   return 'unknown';
 }
+
+export function cleanupSkipList(
+  skipPackages: string[],
+  outdatedPackages: string[],
+): string[] {
+  return skipPackages.filter((pkg) => outdatedPackages.includes(pkg));
+}
+
+export function parseSkipEntry(entry: string): {
+  package: string;
+  version?: string;
+} {
+  const atIndex = entry.lastIndexOf('@');
+  if (atIndex === -1) {
+    return { package: entry };
+  }
+
+  const packageName = entry.substring(0, atIndex);
+  const version = entry.substring(atIndex + 1);
+
+  return { package: packageName, version };
+}
+
+export function shouldSkipPackage(
+  packageName: string,
+  currentVersion: string,
+  wantedVersion: string,
+  latestVersion: string,
+  skipEntries: string[],
+): boolean {
+  for (const entry of skipEntries) {
+    const { package: skipPackage, version: skipVersion } =
+      parseSkipEntry(entry);
+
+    if (skipPackage !== packageName) {
+      continue;
+    }
+
+    // If no version specified, skip the entire package
+    if (!skipVersion) {
+      return true;
+    }
+
+    // If version specified, only skip if it matches wanted or latest
+    if (skipVersion === wantedVersion || skipVersion === latestVersion) {
+      return true;
+    }
+  }
+
+  return false;
+}

@@ -6,8 +6,13 @@
  */
 
 import { spawn } from 'node:child_process';
-import { parseArgs } from './args.js';
-import { printMarkdown, printPlain, printTsv } from './lib/output.js';
+import { cleanupAndSaveSkipFile, parseArgs } from './args.js';
+import {
+  printMarkdown,
+  printPlain,
+  printSkippedInfo,
+  printTsv,
+} from './lib/output.js';
 import { buildRows, sortRows } from './lib/processing.js';
 import type { Meta, OutdatedMap } from './lib/types.js';
 
@@ -142,7 +147,20 @@ export async function run(): Promise<number> {
     args.showAll,
     Math.max(0, args.olderThan),
     args.iso,
+    args.skip,
   );
+
+  // Show skipped packages info
+  const skippedPackages = args.skip.filter((pkg) => outdated[pkg]);
+  printSkippedInfo(skippedPackages, args.format);
+
+  // Auto-cleanup skip file
+  cleanupAndSaveSkipFile(
+    args._skipConfig ?? null,
+    args._skipFilePath ?? null,
+    outdated,
+  );
+
   if (rows.length === 0) {
     return 0;
   }

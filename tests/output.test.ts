@@ -1,5 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { printMarkdown, printPlain, printTsv } from '../src/lib/output.js';
+import {
+  printMarkdown,
+  printPlain,
+  printSkippedInfo,
+  printTsv,
+} from '../src/lib/output.js';
 import type { Row } from '../src/lib/types.js';
 
 describe('Output Functions', () => {
@@ -190,6 +195,51 @@ describe('Output Functions', () => {
       const calls = consoleSpy.mock.calls;
       const dataRow = calls[2][0];
       expect(dataRow).toContain('package|with|pipes');
+    });
+  });
+
+  describe('printSkippedInfo', () => {
+    it('should not print anything for empty skip list', () => {
+      printSkippedInfo([], 'plain');
+      expect(consoleSpy).not.toHaveBeenCalled();
+    });
+
+    it('should print skipped packages info in plain format', () => {
+      printSkippedInfo(['react', 'vue'], 'plain');
+
+      expect(consoleSpy).toHaveBeenCalledTimes(2);
+      expect(consoleSpy.mock.calls[0][0]).toContain(
+        'Skipped 2 package(s): react, vue',
+      );
+      expect(consoleSpy.mock.calls[1][0]).toBe('');
+    });
+
+    it('should print skipped packages info in tsv format', () => {
+      printSkippedInfo(['react', 'vue'], 'tsv');
+
+      expect(consoleSpy).toHaveBeenCalledTimes(1);
+      expect(consoleSpy.mock.calls[0][0]).toBe(
+        '# Skipped 2 package(s): react, vue',
+      );
+    });
+
+    it('should print skipped packages info in markdown format', () => {
+      printSkippedInfo(['react', 'vue'], 'md');
+
+      expect(consoleSpy).toHaveBeenCalledTimes(2);
+      expect(consoleSpy.mock.calls[0][0]).toBe(
+        '> **Note:** Skipped 2 package(s): react, vue',
+      );
+      expect(consoleSpy.mock.calls[1][0]).toBe('');
+    });
+
+    it('should handle single skipped package', () => {
+      printSkippedInfo(['react'], 'plain');
+
+      expect(consoleSpy).toHaveBeenCalledTimes(2);
+      expect(consoleSpy.mock.calls[0][0]).toContain(
+        'Skipped 1 package(s): react',
+      );
     });
   });
 

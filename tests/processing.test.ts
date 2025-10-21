@@ -91,6 +91,39 @@ describe('buildRows', () => {
     expect(row._age_latest).toBeGreaterThan(0);
     expect(row._latest).toBe('2.0.0');
   });
+
+  it('should skip packages in skip list', () => {
+    const rows = buildRows(mockOutdated, mockMetas, true, 0, false, [
+      'package-a',
+    ]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0].Package).toBe('package-b');
+  });
+
+  it('should skip multiple packages in skip list', () => {
+    const rows = buildRows(mockOutdated, mockMetas, true, 0, false, [
+      'package-a',
+      'package-b',
+    ]);
+    expect(rows).toHaveLength(0);
+  });
+
+  it('should handle empty skip list', () => {
+    const rows = buildRows(mockOutdated, mockMetas, true, 0, false, []);
+    expect(rows).toHaveLength(2);
+  });
+
+  it('should handle undefined skip list', () => {
+    const rows = buildRows(mockOutdated, mockMetas, true, 0, false);
+    expect(rows).toHaveLength(2);
+  });
+
+  it('should skip packages that are not in outdated list', () => {
+    const rows = buildRows(mockOutdated, mockMetas, true, 0, false, [
+      'non-existent-package',
+    ]);
+    expect(rows).toHaveLength(2);
+  });
 });
 
 describe('sortRows', () => {
