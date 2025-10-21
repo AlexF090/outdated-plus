@@ -1,0 +1,19 @@
+# Add files here to ignore them from prettier formatting
+/dist
+/coverage
+/apps/web/src/assets/*
+crowdin.*
+README.md
+.nx/
+*.min.css
+*.min.js
+tsconfig.json
+/.nx/workspace-data
+*.env
+*.sh
+*.png
+*.ico
+*.svg
+*.webmanifest
+.gitignore
+.husky/

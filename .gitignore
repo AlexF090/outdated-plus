@@ -1,0 +1,63 @@
+# ignore common tempfiles
+*~
+
+# Folder view configuration files
+.DS_Store
+Desktop.ini
+  
+# Thumbnail cache files
+._*
+Thumbs.db
+
+# Files that might appear on external disks
+.Spotlight-V100
+.Trashes
+
+# gradle ignores
+.gradle/
+# eclipse related
+.settings/ 
+.project
+
+#env
+.env
+
+# compiled output
+dist
+tmp
+out-tsc
+*.tsbuildinfo
+
+# dependencies
+node_modules
+
+# IDEs and editors
+.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+.sass-cache
+connect.lock
+coverage
+libpeerconnection.log
+npm-debug.log
+yarn-error.log
+testem.log
+typings
+.npm
+
+# System Files
+.DS_Store
+Thumbs.db
