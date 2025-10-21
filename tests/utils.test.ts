@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { bumpType, daysAgo, fmtTime, parseIsoZ, parseSemver } from './utils.js';
+import {
+  bumpType,
+  daysAgo,
+  fmtTime,
+  parseIsoZ,
+  parseSemver,
+} from '../src/lib/utils.js';
 
 describe('parseIsoZ', () => {
   it('should parse ISO string with Z suffix', () => {

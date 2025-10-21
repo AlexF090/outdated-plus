@@ -1,8 +1,4 @@
-#!/usr/bin/env tsx
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-nested-ternary */
-/* eslint-disable no-plusplus */
-/* eslint-disable no-console */
+#!/usr/bin/env node
 /**
  * npm-outdated-with-dates -- Node/TS CLI
  * Mirrors the Python version: shows Published/Age for Wanted and Latest,
@@ -11,9 +7,9 @@
 
 import { spawn } from 'node:child_process';
 import { parseArgs } from './args.js';
-import { printMarkdown, printPlain, printTsv } from './output.js';
-import { buildRows, sortRows } from './processing.js';
-import type { Meta, OutdatedMap } from './types.js';
+import { printMarkdown, printPlain, printTsv } from './lib/output.js';
+import { buildRows, sortRows } from './lib/processing.js';
+import type { Meta, OutdatedMap } from './lib/types.js';
 
 export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
   return new Promise((resolve) => {
@@ -72,13 +68,13 @@ export async function fetchMeta(pkg: string): Promise<Meta> {
   let latest = '';
   const timeMap: Record<string, string> = {};
   if (data && typeof data === 'object') {
-    const dt = (data as any)['dist-tags'];
+    const dt = data['dist-tags'];
     if (dt && typeof dt === 'object') {
-      latest = String(dt.latest ?? '');
+      latest = String((dt as Record<string, unknown>).latest ?? '');
     } else {
-      latest = String((data as any)['dist-tags.latest'] ?? '');
+      latest = String(data['dist-tags.latest'] ?? '');
     }
-    const tm = (data as any).time;
+    const tm = data.time;
     if (tm && typeof tm === 'object') {
       for (const [k, v] of Object.entries(tm)) {
         if (typeof v === 'string') {
@@ -114,7 +110,8 @@ export async function run(): Promise<number> {
   await new Promise<void>((resolve) => {
     const tick = () => {
       while (inFlight < limit && index < pkgs.length) {
-        const p = pkgs[index++];
+        const p = pkgs[index];
+        index += 1;
         inFlight += 1;
         fetchMeta(p)
           .then((m) => {
@@ -164,7 +161,7 @@ export async function run(): Promise<number> {
   return 0;
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
+if (require.main === module) {
   run()
     .then((code) => process.exit(code))
     .catch((err) => {

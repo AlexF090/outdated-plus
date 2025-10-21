@@ -42,7 +42,7 @@ describe('fetchMeta', () => {
 
     mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
 
-    const { fetchMeta } = await import('./cli.js');
+    const { fetchMeta } = await import('../src/index.js');
     const result = await fetchMeta('test-package');
 
     expect(result).toEqual({
@@ -64,7 +64,7 @@ describe('fetchMeta', () => {
 
     mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
 
-    const { fetchMeta } = await import('./cli.js');
+    const { fetchMeta } = await import('../src/index.js');
     const result = await fetchMeta('test-package');
 
     expect(result).toEqual({
@@ -78,7 +78,7 @@ describe('fetchMeta', () => {
   it('should handle empty response', async () => {
     mockSpawn.mockReturnValue(createMockChild('{}') as any);
 
-    const { fetchMeta } = await import('./cli.js');
+    const { fetchMeta } = await import('../src/index.js');
     const result = await fetchMeta('test-package');
 
     expect(result).toEqual({
@@ -90,7 +90,7 @@ describe('fetchMeta', () => {
   it('should handle malformed JSON', async () => {
     mockSpawn.mockReturnValue(createMockChild('invalid json') as any);
 
-    const { fetchMeta } = await import('./cli.js');
+    const { fetchMeta } = await import('../src/index.js');
     const result = await fetchMeta('test-package');
 
     expect(result).toEqual({
@@ -106,7 +106,7 @@ describe('fetchMeta', () => {
 
     mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
 
-    const { fetchMeta } = await import('./cli.js');
+    const { fetchMeta } = await import('../src/index.js');
     const result = await fetchMeta('test-package');
 
     expect(result).toEqual({
@@ -124,7 +124,7 @@ describe('fetchMeta', () => {
 
     mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
 
-    const { fetchMeta } = await import('./cli.js');
+    const { fetchMeta } = await import('../src/index.js');
     const result = await fetchMeta('test-package');
 
     expect(result).toEqual({
@@ -148,7 +148,7 @@ describe('fetchMeta', () => {
 
     mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
 
-    const { fetchMeta } = await import('./cli.js');
+    const { fetchMeta } = await import('../src/index.js');
     const result = await fetchMeta('test-package');
 
     expect(result).toEqual({

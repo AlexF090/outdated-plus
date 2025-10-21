@@ -1,4 +1,4 @@
-import type { Args } from './types.js';
+import type { Args } from './lib/types.js';
 
 export function parseArgs(argv: string[]): Args {
   const a = new Map<string, string | true>();

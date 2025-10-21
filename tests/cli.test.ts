@@ -36,7 +36,7 @@ describe('CLI Integration Tests', () => {
 
     mockSpawn.mockReturnValue(mockChild as any);
 
-    const { spawnJson } = await import('./cli.js');
+    const { spawnJson } = await import('../src/index.js');
     const result = await spawnJson('npm', ['outdated', '--json']);
 
     expect(result).toEqual({});
@@ -68,7 +68,7 @@ describe('CLI Integration Tests', () => {
 
     mockSpawn.mockReturnValue(mockChild as any);
 
-    const { spawnJson } = await import('./cli.js');
+    const { spawnJson } = await import('../src/index.js');
     const result = await spawnJson('npm', [
       'view',
       'test-package',
@@ -105,7 +105,7 @@ describe('CLI Integration Tests', () => {
 
     mockSpawn.mockReturnValue(mockChild as any);
 
-    const { spawnJson } = await import('./cli.js');
+    const { spawnJson } = await import('../src/index.js');
     const result = await spawnJson('npm', [
       'view',
       'test-package',
@@ -135,7 +135,7 @@ describe('CLI Integration Tests', () => {
 
     mockSpawn.mockReturnValue(mockChild as any);
 
-    const { spawnJson } = await import('./cli.js');
+    const { spawnJson } = await import('../src/index.js');
     const result = await spawnJson('npm', ['outdated', '--json']);
 
     expect(result).toEqual({});
@@ -155,7 +155,7 @@ describe('CLI Integration Tests', () => {
 
     mockSpawn.mockReturnValue(mockChild as any);
 
-    const { spawnJson } = await import('./cli.js');
+    const { spawnJson } = await import('../src/index.js');
     const result = await spawnJson('npm', ['outdated', '--json']);
 
     expect(result).toEqual({});
@@ -185,7 +185,7 @@ describe('CLI Integration Tests', () => {
 
     mockSpawn.mockReturnValue(mockChild as any);
 
-    const { spawnJson } = await import('./cli.js');
+    const { spawnJson } = await import('../src/index.js');
     const result = await spawnJson('npm', ['view', 'test', '--json']);
 
     expect(result).toEqual(mockData);
@@ -212,13 +212,13 @@ describe('ProgressBar', () => {
   });
 
   it('should create progress bar with correct total', async () => {
-    const { ProgressBar } = await import('./cli.js');
+    const { ProgressBar } = await import('../src/index.js');
     const pb = new ProgressBar(10);
     expect(pb).toBeDefined();
   });
 
   it('should update progress correctly', async () => {
-    const { ProgressBar } = await import('./cli.js');
+    const { ProgressBar } = await import('../src/index.js');
     const pb = new ProgressBar(10);
 
     pb.update(1);
@@ -234,7 +234,7 @@ describe('ProgressBar', () => {
       value: false,
       writable: true,
     });
-    const { ProgressBar } = await import('./cli.js');
+    const { ProgressBar } = await import('../src/index.js');
     const pb = new ProgressBar(10);
 
     pb.update(1);
@@ -242,7 +242,7 @@ describe('ProgressBar', () => {
   });
 
   it('should handle total = 0 without division errors', async () => {
-    const { ProgressBar } = await import('./cli.js');
+    const { ProgressBar } = await import('../src/index.js');
     const pb = new ProgressBar(0);
 
     pb.update(1);
@@ -253,7 +253,7 @@ describe('ProgressBar', () => {
   });
 
   it('should handle step > 1 correctly', async () => {
-    const { ProgressBar } = await import('./cli.js');
+    const { ProgressBar } = await import('../src/index.js');
     const pb = new ProgressBar(10);
 
     pb.update(3);
@@ -272,7 +272,7 @@ describe('ProgressBar', () => {
       configurable: true,
     });
 
-    const { ProgressBar } = await import('./cli.js');
+    const { ProgressBar } = await import('../src/index.js');
     const pb = new ProgressBar(10);
 
     pb.update(5);
@@ -295,7 +295,7 @@ describe('ProgressBar', () => {
       writable: true,
     });
 
-    const { ProgressBar } = await import('./cli.js');
+    const { ProgressBar } = await import('../src/index.js');
     const pb = new ProgressBar(10);
 
     pb.finish();

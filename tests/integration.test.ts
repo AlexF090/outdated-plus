@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Meta, OutdatedMap } from './types.js';
+import type { Meta, OutdatedMap } from '../src/types.js';
 
 vi.mock('node:child_process');
 
@@ -85,7 +85,7 @@ describe('Integration Tests', () => {
       return createMockChild('{}') as any;
     });
 
-    const { run } = await import('./cli.js');
+    const { run } = await import('../src/index.js');
     const result = await run();
 
     expect(result).toBe(0);
@@ -96,7 +96,7 @@ describe('Integration Tests', () => {
       return createMockChild('{}') as any;
     });
 
-    const { run } = await import('./cli.js');
+    const { run } = await import('../src/index.js');
     const result = await run();
 
     expect(result).toBe(0);
@@ -114,7 +114,7 @@ describe('Integration Tests', () => {
       return createMockChild('{}') as any;
     });
 
-    const { run } = await import('./cli.js');
+    const { run } = await import('../src/index.js');
     const result = await run();
 
     expect(result).toBe(0);
@@ -157,7 +157,7 @@ describe('Integration Tests', () => {
       return createMockChild('{}') as any;
     });
 
-    const { run } = await import('./cli.js');
+    const { run } = await import('../src/index.js');
     await run();
 
     expect(maxConcurrent).toBeLessThanOrEqual(12);
@@ -179,7 +179,7 @@ describe('Integration Tests', () => {
       return createMockChild('{}') as any;
     });
 
-    const { run } = await import('./cli.js');
+    const { run } = await import('../src/index.js');
 
     const originalArgv = process.argv;
 
@@ -222,7 +222,7 @@ describe('Integration Tests', () => {
       return createMockChild('{}') as any;
     });
 
-    const { run } = await import('./cli.js');
+    const { run } = await import('../src/index.js');
 
     const originalArgv = process.argv;
 
@@ -257,7 +257,7 @@ describe('Integration Tests', () => {
       return createMockChild('{}') as any;
     });
 
-    const { run } = await import('./cli.js');
+    const { run } = await import('../src/index.js');
 
     const originalArgv = process.argv;
 
@@ -297,7 +297,7 @@ describe('Integration Tests', () => {
       return createMockChild('{}') as any;
     });
 
-    const { run } = await import('./cli.js');
+    const { run } = await import('../src/index.js');
 
     const originalArgv = process.argv;
 
@@ -323,7 +323,7 @@ describe('Integration Tests', () => {
       return createMockChild('{}') as any;
     });
 
-    const { run } = await import('./cli.js');
+    const { run } = await import('../src/index.js');
 
     const result = await run();
 

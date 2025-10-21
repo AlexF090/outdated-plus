@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { printMarkdown, printPlain, printTsv } from './output.js';
-import type { Row } from './types.js';
+import { printMarkdown, printPlain, printTsv } from '../src/lib/output.js';
+import type { Row } from '../src/lib/types.js';
 
 describe('Output Functions', () => {
   const mockRows: Row[] = [

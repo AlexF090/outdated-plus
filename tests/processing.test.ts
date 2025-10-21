@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { buildRows, sortRows } from './processing.js';
-import type { Meta, OutdatedMap, Row } from './types.js';
+import { buildRows, sortRows } from '../src/lib/processing.js';
+import type { Meta, OutdatedMap, Row } from '../src/lib/types.js';
 
 describe('buildRows', () => {
   beforeEach(() => {
