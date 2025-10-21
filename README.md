@@ -1,4 +1,4 @@
-# npm-outdated-with-dates
+# outdated-plus
 
 A CLI tool that extends `npm outdated` with publication dates and age information for packages. Shows when packages were published and how old they are, helping you make informed decisions about updates.
 
@@ -16,24 +16,24 @@ A CLI tool that extends `npm outdated` with publication dates and age informatio
 
 ### Global Installation
 ```bash
-npm install -g npm-outdated-with-dates
+npm install -g outdated-plus
 ```
 
 ### Local Installation
 ```bash
-npm install --save-dev npm-outdated-with-dates
+npm install --save-dev outdated-plus
 ```
 
 ## Usage
 
 ### Basic Usage
 ```bash
-npm-outdated-with-dates
+outdated-plus
 ```
 
 ### With Options
 ```bash
-npm-outdated-with-dates --older-than 30 --format md --sort-by age_latest
+outdated-plus --older-than 30 --format md --sort-by age_latest
 ```
 
 ## Command Line Options
@@ -67,17 +67,17 @@ The tool displays the following information for each outdated package:
 
 ### Show packages older than 30 days in markdown format
 ```bash
-npm-outdated-with-dates --older-than 30 --format md
+outdated-plus --older-than 30 --format md
 ```
 
 ### Sort by age and export as TSV
 ```bash
-npm-outdated-with-dates --sort-by age_latest --format tsv > outdated.tsv
+outdated-plus --sort-by age_latest --format tsv > outdated.tsv
 ```
 
 ### Show all packages with ISO dates
 ```bash
-npm-outdated-with-dates --show-all --iso
+outdated-plus --show-all --iso
 ```
 
 ## Use Cases

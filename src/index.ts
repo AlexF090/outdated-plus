@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * npm-outdated-with-dates -- Node/TS CLI
+ * outdated-plus -- Node/TS CLI
  * Mirrors the Python version: shows Published/Age for Wanted and Latest,
  * supports sorting and output formats plain|tsv|md.
  */

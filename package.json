@@ -1,10 +1,10 @@
 {
-  "name": "npm-outdated-with-dates",
+  "name": "outdated-plus",
   "version": "1.0.0",
   "description": "CLI tool to check npm outdated packages with publication dates",
   "main": "dist/index.js",
   "bin": {
-    "npm-outdated-with-dates": "dist/index.js"
+    "outdated-plus": "dist/index.js"
   },
   "files": [
     "dist",
@@ -39,12 +39,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/AlexF090/npm-outdated-with-dates.git"
+    "url": "git+https://github.com/AlexF090/outdated-plus.git"
   },
   "bugs": {
-    "url": "https://github.com/AlexF090/npm-outdated-with-dates/issues"
+    "url": "https://github.com/AlexF090/outdated-plus/issues"
   },
-  "homepage": "https://github.com/AlexF090/npm-outdated-with-dates#readme",
+  "homepage": "https://github.com/AlexF090/outdated-plus#readme",
   "devDependencies": {
     "@types/node": "^24.9.1",
     "@typescript-eslint/eslint-plugin": "^8.46.2",
