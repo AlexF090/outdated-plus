@@ -7,7 +7,7 @@ A CLI tool that extends `npm outdated` with publication dates and age informatio
 - 📅 **Publication Dates**: Shows when the wanted and latest versions were published
 - ⏰ **Age Information**: Displays how many days ago packages were published
 - 🔄 **Bump Type Analysis**: Shows whether updates are major, minor, or patch releases
-- 📊 **Multiple Output Formats**: Plain text, TSV, and Markdown formats
+- 📊 **Multiple Output Formats**: Plain text and Markdown formats
 - 🎯 **Filtering**: Filter packages by age (e.g., only show packages older than 30 days)
 - 🔀 **Flexible Sorting**: Sort by name, age, publication date, or version
 - ⚡ **Concurrent Processing**: Configurable concurrency for faster metadata fetching
@@ -44,7 +44,7 @@ outdated-plus --older-than 30 --format md --sort-by age_latest
 |--------|-------------|---------|
 | `--older-than N` | Only show packages older than N days | 0 (show all) |
 | `--show-all` | Show all outdated packages regardless of age | false |
-| `--format FORMAT` | Output format: `plain`, `tsv`, or `md` | `plain` |
+| `--format FORMAT` | Output format: `plain` or `md` | `plain` |
 | `--sort-by FIELD` | Sort by: `name`, `age_latest`, `age_wanted`, `published_latest`, `published_wanted`, `current`, `wanted`, `latest` | `published_latest` |
 | `--order ORDER` | Sort order: `asc` or `desc` | `desc` |
 | `--iso` | Use ISO date format | false |
@@ -84,12 +84,6 @@ package-b   2.0.0    2.0.0   same       2.1.0   minor      2023-10-01 10:00   61
 | package-b | 2.0.0 | 2.0.0 | same | 2.1.0 | minor | 2023-10-01 10:00 | 61 | 2023-11-20 10:00 | 11 |
 ```
 
-#### TSV Format (`--format tsv`)
-```
-Package	Current	Wanted	To Wanted	Latest	To Latest	Published (Wanted)	Age(d) (Wanted)	Published (Latest)	Age(d) (Latest)
-package-a	1.0.0	1.1.0	minor	2.0.0	major	2023-11-01 10:00	30	2023-11-15 10:00	16
-package-b	2.0.0	2.0.0	same	2.1.0	minor	2023-10-01 10:00	61	2023-11-20 10:00	11
-```
 
 ## Skip Dependencies
 
@@ -133,9 +127,9 @@ This prevents your skip file from accumulating outdated entries over time.
 outdated-plus --older-than 30 --format md
 ```
 
-### Sort by age and export as TSV
+### Sort by age and export as Markdown
 ```bash
-outdated-plus --sort-by age_latest --format tsv > outdated.tsv
+outdated-plus --sort-by age_latest --format md > outdated.md
 ```
 
 ### Show all packages with ISO dates

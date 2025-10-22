@@ -44,6 +44,38 @@ export function parseSemver(
   return [Number(m[1]), Number(m[2]), Number(m[3]), m[4] ?? ''];
 }
 
+export function isVersionHigher(version1: string, version2: string): boolean {
+  const v1 = parseSemver(version1);
+  const v2 = parseSemver(version2);
+
+  if (!v1 || !v2) {
+    return false;
+  }
+
+  // Compare major, minor, patch
+  for (let i = 0; i < 3; i++) {
+    if (v1[i] > v2[i]) {
+      return true;
+    }
+    if (v1[i] < v2[i]) {
+      return false;
+    }
+  }
+
+  // If major.minor.patch are equal, compare prerelease
+  if (v1[3] && !v2[3]) {
+    return false; // version1 has prerelease, version2 doesn't
+  }
+  if (!v1[3] && v2[3]) {
+    return true; // version2 has prerelease, version1 doesn't
+  }
+  if (v1[3] && v2[3]) {
+    return v1[3] > v2[3];
+  }
+
+  return false; // versions are equal
+}
+
 export function bumpType(
   fromV: string,
   toV: string,
@@ -66,13 +98,6 @@ export function bumpType(
     return 'patch';
   }
   return 'unknown';
-}
-
-export function cleanupSkipList(
-  skipPackages: string[],
-  outdatedPackages: string[],
-): string[] {
-  return skipPackages.filter((pkg) => outdatedPackages.includes(pkg));
 }
 
 export function parseSkipEntry(entry: string): {
@@ -118,8 +143,8 @@ export function shouldSkipPackage(
       return true;
     }
 
-    // If version specified, only skip if it matches wanted or latest
-    if (skipVersion === wantedVersion || skipVersion === latestVersion) {
+    // If version specified, only skip if it matches the latest version AND wanted hasn't changed
+    if (skipVersion === latestVersion && wantedVersion === currentVersion) {
       return true;
     }
   }

@@ -2,20 +2,19 @@
 /**
  * outdated-plus -- Node/TS CLI
  * Mirrors the Python version: shows Published/Age for Wanted and Latest,
- * supports sorting and output formats plain|tsv|md.
+ * supports sorting and output formats plain|md.
  */
 
 import { spawn } from 'node:child_process';
-import { cleanupAndSaveSkipFile, parseArgs } from './args.js';
 import {
-  printMarkdown,
-  printPlain,
-  printSkippedInfo,
-  printTsv,
-} from './lib/output.js';
+  addSkipEntriesToFile,
+  cleanupAndSaveSkipFile,
+  parseArgs,
+} from './args.js';
+import { printMarkdown, printPlain, printSkippedInfo } from './lib/output.js';
 import { buildRows, sortRows } from './lib/processing.js';
 import type { Meta, OutdatedMap } from './lib/types.js';
-import { parseSkipEntry } from './lib/utils.js';
+import { parseSkipEntry, shouldSkipPackage } from './lib/utils.js';
 
 export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
   return new Promise((resolve) => {
@@ -30,6 +29,19 @@ export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
       } catch {
         resolve({});
       }
+    });
+  });
+}
+
+export function spawnText(cmd: string, args: string[]): Promise<string> {
+  return new Promise((resolve) => {
+    const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'ignore'] });
+    let out = '';
+    child.stdout.on('data', (c) => {
+      out += String(c);
+    });
+    child.on('close', () => {
+      resolve(out.trim());
     });
   });
 }
@@ -90,6 +102,20 @@ export async function fetchMeta(pkg: string): Promise<Meta> {
     }
   }
   return { latest, timeMap };
+}
+
+export async function getPackageCount(): Promise<number> {
+  try {
+    const output = await spawnText('npm', ['list', '--depth=0', '--json']);
+    const data = JSON.parse(output);
+    return Object.keys(data.dependencies || {}).length;
+  } catch {
+    return 0;
+  }
+}
+
+export function printUpToDateMessage(packageCount: number): void {
+  console.log(`No updates available (${packageCount} packages checked)`);
 }
 
 export async function run(): Promise<number> {
@@ -154,9 +180,26 @@ export async function run(): Promise<number> {
   // Show skipped packages info
   const skippedPackages = args.skip.filter((entry) => {
     const { package: pkg } = parseSkipEntry(entry);
-    return outdated[pkg];
+    const info = outdated[pkg];
+    if (!info) {
+      return false;
+    }
+    return shouldSkipPackage(
+      pkg,
+      info.current,
+      info.wanted,
+      info.latest,
+      args.skip,
+    );
   });
   printSkippedInfo(skippedPackages, args.format);
+
+  // Add command line skip entries to file
+  addSkipEntriesToFile(
+    args._skipConfig ?? null,
+    args._skipFilePath ?? null,
+    args._commandLineSkips ?? [],
+  );
 
   // Auto-cleanup skip file
   cleanupAndSaveSkipFile(
@@ -166,14 +209,18 @@ export async function run(): Promise<number> {
   );
 
   if (rows.length === 0) {
+    // Only show "up to date" message if no filtering was applied
+    // (i.e., when there are truly no outdated packages)
+    const hasFiltering = args.olderThan > 0 || args.skip.length > 0;
+    if (!hasFiltering) {
+      const packageCount = await getPackageCount();
+      printUpToDateMessage(packageCount);
+    }
     return 0;
   }
   rows = sortRows(rows, args.sortBy, args.order);
 
   switch (args.format) {
-    case 'tsv':
-      printTsv(rows);
-      break;
     case 'md':
       printMarkdown(rows);
       break;
