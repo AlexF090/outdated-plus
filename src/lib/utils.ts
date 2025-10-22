@@ -67,3 +67,62 @@ export function bumpType(
   }
   return 'unknown';
 }
+
+export function cleanupSkipList(
+  skipPackages: string[],
+  outdatedPackages: string[],
+): string[] {
+  return skipPackages.filter((pkg) => outdatedPackages.includes(pkg));
+}
+
+export function parseSkipEntry(entry: string): {
+  package: string;
+  version?: string;
+} {
+  let atIndex: number;
+  if (entry.startsWith('@')) {
+    // For scoped packages, find the second '@' (the version separator, if present)
+    atIndex = entry.indexOf('@', 1);
+  } else {
+    // For non-scoped packages, find the last '@' to handle cases like 'package@name@1.0.0'
+    atIndex = entry.lastIndexOf('@');
+  }
+
+  if (atIndex === -1) {
+    return { package: entry };
+  }
+
+  const packageName = entry.substring(0, atIndex);
+  const version = entry.substring(atIndex + 1);
+
+  return { package: packageName, version };
+}
+
+export function shouldSkipPackage(
+  packageName: string,
+  currentVersion: string,
+  wantedVersion: string,
+  latestVersion: string,
+  skipEntries: string[],
+): boolean {
+  for (const entry of skipEntries) {
+    const { package: skipPackage, version: skipVersion } =
+      parseSkipEntry(entry);
+
+    if (skipPackage !== packageName) {
+      continue;
+    }
+
+    // If no version specified, skip the entire package
+    if (!skipVersion) {
+      return true;
+    }
+
+    // If version specified, only skip if it matches wanted or latest
+    if (skipVersion === wantedVersion || skipVersion === latestVersion) {
+      return true;
+    }
+  }
+
+  return false;
+}

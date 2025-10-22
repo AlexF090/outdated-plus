@@ -1,0 +1,5 @@
+{
+  "packages": [],
+  "reason": "Test version-specific skip functionality",
+  "autoCleanup": true
+}

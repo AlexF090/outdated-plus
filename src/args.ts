@@ -1,4 +1,7 @@
-import type { Args } from './lib/types.js';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { Args, OutdatedMap, SkipFileConfig } from './lib/types.js';
+import { parseSkipEntry } from './lib/utils.js';
 
 export function parseArgs(argv: string[]): Args {
   const a = new Map<string, string | true>();
@@ -21,6 +24,28 @@ export function parseArgs(argv: string[]): Args {
   const olderThan = Number(a.get('--older-than') ?? 0);
   const showAll = Boolean(a.get('--show-all'));
   const iso = Boolean(a.get('--iso'));
+  // Parse skip packages from command line
+  const skipPackages: string[] = [];
+  const skipValue = a.get('--skip');
+  if (skipValue && typeof skipValue === 'string') {
+    skipPackages.push(...skipValue.split(',').map((p) => p.trim()));
+  }
+
+  // Load skip packages from default file
+  let fileSkipPackages: string[] = [];
+  let skipConfig: SkipFileConfig | null = null;
+  let skipFilePath: string | null = null;
+
+  try {
+    const defaultSkipFile = join(process.cwd(), '.outdated-plus-skip');
+    const content = readFileSync(defaultSkipFile, 'utf-8');
+    skipConfig = JSON.parse(content);
+    fileSkipPackages = skipConfig?.packages || [];
+    skipFilePath = defaultSkipFile;
+  } catch {
+    // Default file doesn't exist, ignore
+  }
+
   const normalizedSort =
     sortBy === 'age'
       ? 'age_latest'
@@ -35,5 +60,59 @@ export function parseArgs(argv: string[]): Args {
     sortBy: normalizedSort as Args['sortBy'],
     order,
     format,
+    skip: [...skipPackages, ...fileSkipPackages],
+    _skipConfig: skipConfig,
+    _skipFilePath: skipFilePath,
   };
+}
+
+export function cleanupAndSaveSkipFile(
+  skipConfig: SkipFileConfig | null,
+  skipFilePath: string | null,
+  outdated: OutdatedMap,
+): void {
+  if (!skipConfig || !skipFilePath) {
+    return;
+  }
+
+  // Only cleanup if autoCleanup is enabled (default: true)
+  const autoCleanup = skipConfig.autoCleanup !== false;
+  if (!autoCleanup) {
+    return;
+  }
+
+  const cleanedPackages = skipConfig.packages.filter((entry) => {
+    const { package: pkg, version } = parseSkipEntry(entry);
+
+    // If package is not in outdated list, remove it
+    if (!outdated[pkg]) {
+      return false;
+    }
+
+    // If no version specified, keep the entry (package is still outdated)
+    if (!version) {
+      return true;
+    }
+
+    // If version specified, only keep if the version is still wanted or latest
+    const outdatedInfo = outdated[pkg];
+    return version === outdatedInfo.wanted || version === outdatedInfo.latest;
+  });
+
+  // Only update file if packages were removed
+  if (cleanedPackages.length !== skipConfig.packages.length) {
+    const updatedConfig: SkipFileConfig = {
+      ...skipConfig,
+      packages: cleanedPackages,
+    };
+
+    try {
+      writeFileSync(
+        skipFilePath,
+        JSON.stringify(updatedConfig, null, 2) + '\n',
+      );
+    } catch {
+      // Ignore write errors
+    }
+  }
 }

@@ -1,0 +1,11 @@
+{
+  "packages": [
+    "react",
+    "vue",
+    "angular",
+    "react-refresh@7.0.0",
+    "typescript@5.0.0"
+  ],
+  "reason": "These packages are intentionally kept at older versions for compatibility reasons",
+  "autoCleanup": true
+}

@@ -5,6 +5,8 @@ import {
   fmtTime,
   parseIsoZ,
   parseSemver,
+  parseSkipEntry,
+  shouldSkipPackage,
 } from '../src/lib/utils.js';
 
 describe('parseIsoZ', () => {
@@ -141,5 +143,89 @@ describe('bumpType', () => {
   it('should return unknown for invalid versions', () => {
     expect(bumpType('invalid', '1.2.3')).toBe('unknown');
     expect(bumpType('1.2.3', 'invalid')).toBe('unknown');
+  });
+});
+
+describe('parseSkipEntry', () => {
+  it('should parse package name without version', () => {
+    const result = parseSkipEntry('react');
+    expect(result).toEqual({ package: 'react' });
+  });
+
+  it('should parse package name with version', () => {
+    const result = parseSkipEntry('react@18.2.0');
+    expect(result).toEqual({ package: 'react', version: '18.2.0' });
+  });
+
+  it('should handle scoped packages', () => {
+    const result = parseSkipEntry('@types/react@18.2.0');
+    expect(result).toEqual({ package: '@types/react', version: '18.2.0' });
+  });
+
+  it('should handle scoped packages without version', () => {
+    const result = parseSkipEntry('@types/react');
+    expect(result).toEqual({ package: '@types/react' });
+  });
+
+  it('should handle packages with @ in name', () => {
+    const result = parseSkipEntry('some-package@name@1.0.0');
+    expect(result).toEqual({ package: 'some-package@name', version: '1.0.0' });
+  });
+});
+
+describe('shouldSkipPackage', () => {
+  it('should skip entire package when no version specified', () => {
+    const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
+      'react',
+    ]);
+    expect(result).toBe(true);
+  });
+
+  it('should not skip package when not in skip list', () => {
+    const result = shouldSkipPackage('vue', '3.1.0', '3.2.0', '3.3.0', [
+      'react',
+    ]);
+    expect(result).toBe(false);
+  });
+
+  it('should skip package when wanted version matches', () => {
+    const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
+      'react@18.2.0',
+    ]);
+    expect(result).toBe(true);
+  });
+
+  it('should skip package when latest version matches', () => {
+    const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
+      'react@18.3.0',
+    ]);
+    expect(result).toBe(true);
+  });
+
+  it('should not skip package when version does not match', () => {
+    const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
+      'react@18.1.0',
+    ]);
+    expect(result).toBe(false);
+  });
+
+  it('should handle multiple skip entries', () => {
+    const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
+      'vue@3.2.0',
+      'react@18.2.0',
+      'angular@15.0.0',
+    ]);
+    expect(result).toBe(true);
+  });
+
+  it('should handle scoped packages', () => {
+    const result = shouldSkipPackage(
+      '@types/react',
+      '18.1.0',
+      '18.2.0',
+      '18.3.0',
+      ['@types/react@18.2.0'],
+    );
+    expect(result).toBe(true);
   });
 });

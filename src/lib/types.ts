@@ -48,4 +48,24 @@ export type Args = {
     | 'latest';
   order: 'asc' | 'desc';
   format: 'plain' | 'tsv' | 'md';
+  skip: string[];
+  _skipConfig?: SkipFileConfig | null;
+  _skipFilePath?: string | null;
+};
+
+export type SkippedDependencies = {
+  packages: string[];
+  reason?: string;
+};
+
+export type SkipFileConfig = {
+  packages: string[];
+  reason?: string;
+  autoCleanup?: boolean;
+};
+
+export type SkipEntry = {
+  package: string;
+  version?: string; // If specified, only skip this specific version
+  reason?: string;
 };

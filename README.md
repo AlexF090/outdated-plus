@@ -11,6 +11,8 @@ A CLI tool that extends `npm outdated` with publication dates and age informatio
 - 🎯 **Filtering**: Filter packages by age (e.g., only show packages older than 30 days)
 - 🔀 **Flexible Sorting**: Sort by name, age, publication date, or version
 - ⚡ **Concurrent Processing**: Configurable concurrency for faster metadata fetching
+- 🚫 **Skip Dependencies**: Skip specific packages or versions from the output using CLI flags or config files
+- 🧹 **Auto-Cleanup**: Automatically remove outdated skip entries from config files
 
 ## Installation
 
@@ -47,6 +49,7 @@ outdated-plus --older-than 30 --format md --sort-by age_latest
 | `--order ORDER` | Sort order: `asc` or `desc` | `desc` |
 | `--iso` | Use ISO date format | false |
 | `--concurrency N` | Number of concurrent requests for metadata | 12 |
+| `--skip PACKAGES` | Comma-separated list of packages to skip | none |
 
 ## Output Format
 
@@ -63,6 +66,66 @@ The tool displays the following information for each outdated package:
 - **Published (Latest)**: When the latest version was published
 - **Age(d) (Latest)**: Days since latest version was published
 
+### Example Output
+
+#### Plain Text Format (default)
+```
+Package     Current  Wanted  To Wanted  Latest  To Latest  Published (Wanted)  Age(d) (Wanted)  Published (Latest)  Age(d) (Latest)
+----------  -------  ------  ---------  ------  ---------  ------------------  ---------------  ------------------  ---------------
+package-a   1.0.0    1.1.0   minor      2.0.0   major      2023-11-01 10:00   30               2023-11-15 10:00    16
+package-b   2.0.0    2.0.0   same       2.1.0   minor      2023-10-01 10:00   61               2023-11-20 10:00    11
+```
+
+#### Markdown Format (`--format md`)
+```markdown
+| Package | Current | Wanted | To Wanted | Latest | To Latest | Published (Wanted) | Age(d) (Wanted) | Published (Latest) | Age(d) (Latest) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| package-a | 1.0.0 | 1.1.0 | minor | 2.0.0 | major | 2023-11-01 10:00 | 30 | 2023-11-15 10:00 | 16 |
+| package-b | 2.0.0 | 2.0.0 | same | 2.1.0 | minor | 2023-10-01 10:00 | 61 | 2023-11-20 10:00 | 11 |
+```
+
+#### TSV Format (`--format tsv`)
+```
+Package	Current	Wanted	To Wanted	Latest	To Latest	Published (Wanted)	Age(d) (Wanted)	Published (Latest)	Age(d) (Latest)
+package-a	1.0.0	1.1.0	minor	2.0.0	major	2023-11-01 10:00	30	2023-11-15 10:00	16
+package-b	2.0.0	2.0.0	same	2.1.0	minor	2023-10-01 10:00	61	2023-11-20 10:00	11
+```
+
+## Skip Dependencies
+
+You can skip specific packages or versions from the output using the `--skip` flag or a configuration file.
+
+### Skip Syntax
+
+- **Entire package**: `package-name` - skips all versions of the package
+- **Specific version**: `package-name@version` - only skips that specific version
+- **Scoped packages**: `@scope/package@version` - works with scoped packages
+
+### Configuration File
+
+Create a `.outdated-plus-skip` file in your project root:
+
+```json
+{
+  "packages": [
+    "react",
+    "react-refresh@7.0.0",
+    "@types/react@18.2.0"
+  ],
+  "reason": "These packages are intentionally kept at older versions",
+  "autoCleanup": true
+}
+```
+
+### Auto-Cleanup
+
+When `autoCleanup` is enabled (default: `true`), the tool automatically removes skip entries that are no longer relevant:
+
+- Package entries are removed when the package is no longer outdated
+- Version-specific entries are removed when that version is no longer the wanted or latest version
+
+This prevents your skip file from accumulating outdated entries over time.
+
 ## Examples
 
 ### Show packages older than 30 days in markdown format
@@ -78,6 +141,28 @@ outdated-plus --sort-by age_latest --format tsv > outdated.tsv
 ### Show all packages with ISO dates
 ```bash
 outdated-plus --show-all --iso
+```
+
+### Skip specific packages
+```bash
+outdated-plus --skip "react,vue,angular"
+```
+
+### Use a config file to skip packages
+Create a `.outdated-plus-skip` file in your project root - it will be automatically detected:
+
+```bash
+outdated-plus
+```
+
+### Skip specific versions
+```bash
+outdated-plus --skip "react-refresh@7.0.0,typescript@5.0.0"
+```
+
+### Mix of package and version skips
+```bash
+outdated-plus --skip "react,react-refresh@7.0.0,vue@3.2.0"
 ```
 
 ## Use Cases
