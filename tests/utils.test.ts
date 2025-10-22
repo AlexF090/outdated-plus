@@ -3,6 +3,7 @@ import {
   bumpType,
   daysAgo,
   fmtTime,
+  isVersionHigher,
   parseIsoZ,
   parseSemver,
   parseSkipEntry,
@@ -173,6 +174,36 @@ describe('parseSkipEntry', () => {
   });
 });
 
+describe('isVersionHigher', () => {
+  it('should return true when first version is higher', () => {
+    expect(isVersionHigher('2.0.0', '1.0.0')).toBe(true);
+    expect(isVersionHigher('1.1.0', '1.0.0')).toBe(true);
+    expect(isVersionHigher('1.0.1', '1.0.0')).toBe(true);
+  });
+
+  it('should return false when first version is lower', () => {
+    expect(isVersionHigher('1.0.0', '2.0.0')).toBe(false);
+    expect(isVersionHigher('1.0.0', '1.1.0')).toBe(false);
+    expect(isVersionHigher('1.0.0', '1.0.1')).toBe(false);
+  });
+
+  it('should return false when versions are equal', () => {
+    expect(isVersionHigher('1.0.0', '1.0.0')).toBe(false);
+  });
+
+  it('should handle prerelease versions', () => {
+    expect(isVersionHigher('1.0.0', '1.0.0-beta')).toBe(true);
+    expect(isVersionHigher('1.0.0-alpha', '1.0.0-beta')).toBe(false);
+    expect(isVersionHigher('1.0.0-beta', '1.0.0-alpha')).toBe(true);
+  });
+
+  it('should return false for invalid versions', () => {
+    expect(isVersionHigher('invalid', '1.0.0')).toBe(false);
+    expect(isVersionHigher('1.0.0', 'invalid')).toBe(false);
+    expect(isVersionHigher('invalid', 'invalid')).toBe(false);
+  });
+});
+
 describe('shouldSkipPackage', () => {
   it('should skip entire package when no version specified', () => {
     const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
@@ -188,18 +219,25 @@ describe('shouldSkipPackage', () => {
     expect(result).toBe(false);
   });
 
-  it('should skip package when wanted version matches', () => {
-    const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
-      'react@18.2.0',
+  it('should skip package when version matches latest and wanted equals current', () => {
+    const result = shouldSkipPackage('react', '18.1.0', '18.1.0', '18.3.0', [
+      'react@18.3.0',
     ]);
     expect(result).toBe(true);
   });
 
-  it('should skip package when latest version matches', () => {
+  it('should not skip package when version matches latest but wanted changed', () => {
     const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
       'react@18.3.0',
     ]);
-    expect(result).toBe(true);
+    expect(result).toBe(false);
+  });
+
+  it('should not skip package when version does not match latest', () => {
+    const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
+      'react@18.2.0',
+    ]);
+    expect(result).toBe(false);
   });
 
   it('should not skip package when version does not match', () => {
@@ -210,9 +248,9 @@ describe('shouldSkipPackage', () => {
   });
 
   it('should handle multiple skip entries', () => {
-    const result = shouldSkipPackage('react', '18.1.0', '18.2.0', '18.3.0', [
+    const result = shouldSkipPackage('react', '18.1.0', '18.1.0', '18.3.0', [
       'vue@3.2.0',
-      'react@18.2.0',
+      'react@18.3.0',
       'angular@15.0.0',
     ]);
     expect(result).toBe(true);
@@ -222,9 +260,9 @@ describe('shouldSkipPackage', () => {
     const result = shouldSkipPackage(
       '@types/react',
       '18.1.0',
-      '18.2.0',
+      '18.1.0',
       '18.3.0',
-      ['@types/react@18.2.0'],
+      ['@types/react@18.3.0'],
     );
     expect(result).toBe(true);
   });

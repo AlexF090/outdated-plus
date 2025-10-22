@@ -51,6 +51,7 @@ export type Args = {
   skip: string[];
   _skipConfig?: SkipFileConfig | null;
   _skipFilePath?: string | null;
+  _commandLineSkips?: string[];
 };
 
 export type SkippedDependencies = {

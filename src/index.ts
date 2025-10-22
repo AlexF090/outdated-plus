@@ -6,7 +6,11 @@
  */
 
 import { spawn } from 'node:child_process';
-import { cleanupAndSaveSkipFile, parseArgs } from './args.js';
+import {
+  addSkipEntriesToFile,
+  cleanupAndSaveSkipFile,
+  parseArgs,
+} from './args.js';
 import {
   printMarkdown,
   printPlain,
@@ -15,7 +19,7 @@ import {
 } from './lib/output.js';
 import { buildRows, sortRows } from './lib/processing.js';
 import type { Meta, OutdatedMap } from './lib/types.js';
-import { parseSkipEntry } from './lib/utils.js';
+import { parseSkipEntry, shouldSkipPackage } from './lib/utils.js';
 
 export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
   return new Promise((resolve) => {
@@ -154,9 +158,26 @@ export async function run(): Promise<number> {
   // Show skipped packages info
   const skippedPackages = args.skip.filter((entry) => {
     const { package: pkg } = parseSkipEntry(entry);
-    return outdated[pkg];
+    const info = outdated[pkg];
+    if (!info) {
+      return false;
+    }
+    return shouldSkipPackage(
+      pkg,
+      info.current,
+      info.wanted,
+      info.latest,
+      args.skip,
+    );
   });
   printSkippedInfo(skippedPackages, args.format);
+
+  // Add command line skip entries to file
+  addSkipEntriesToFile(
+    args._skipConfig ?? null,
+    args._skipFilePath ?? null,
+    args._commandLineSkips ?? [],
+  );
 
   // Auto-cleanup skip file
   cleanupAndSaveSkipFile(

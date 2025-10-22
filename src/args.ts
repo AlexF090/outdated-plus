@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Args, OutdatedMap, SkipFileConfig } from './lib/types.js';
-import { parseSkipEntry } from './lib/utils.js';
+import { isVersionHigher, parseSkipEntry } from './lib/utils.js';
 
 export function parseArgs(argv: string[]): Args {
   const a = new Map<string, string | true>();
@@ -63,7 +63,44 @@ export function parseArgs(argv: string[]): Args {
     skip: [...skipPackages, ...fileSkipPackages],
     _skipConfig: skipConfig,
     _skipFilePath: skipFilePath,
+    _commandLineSkips: skipPackages,
   };
+}
+
+export function addSkipEntriesToFile(
+  skipConfig: SkipFileConfig | null,
+  skipFilePath: string | null,
+  commandLineSkips: string[],
+): void {
+  if (commandLineSkips.length === 0) {
+    return;
+  }
+
+  const defaultSkipFile =
+    skipFilePath || join(process.cwd(), '.outdated-plus-skip');
+
+  // Create default config if none exists
+  const config: SkipFileConfig = skipConfig || {
+    packages: [],
+    reason: 'Skip entries added via command line',
+    autoCleanup: true,
+  };
+
+  // Add new skip entries that don't already exist
+  const existingPackages = new Set(config.packages);
+  const newPackages = commandLineSkips.filter(
+    (entry) => !existingPackages.has(entry),
+  );
+
+  if (newPackages.length > 0) {
+    config.packages.push(...newPackages);
+
+    try {
+      writeFileSync(defaultSkipFile, JSON.stringify(config, null, 2) + '\n');
+    } catch {
+      // Ignore write errors
+    }
+  }
 }
 
 export function cleanupAndSaveSkipFile(
@@ -94,9 +131,13 @@ export function cleanupAndSaveSkipFile(
       return true;
     }
 
-    // If version specified, only keep if the version is still wanted or latest
+    // If version specified, only keep if:
+    // 1. The latest version is not higher than the skip version AND
+    // 2. The wanted version hasn't changed (wanted equals current)
     const outdatedInfo = outdated[pkg];
-    return version === outdatedInfo.wanted || version === outdatedInfo.latest;
+    const latestNotHigher = !isVersionHigher(outdatedInfo.latest, version);
+    const wantedUnchanged = outdatedInfo.wanted === outdatedInfo.current;
+    return latestNotHigher && wantedUnchanged;
   });
 
   // Only update file if packages were removed
