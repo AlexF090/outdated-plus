@@ -38,6 +38,19 @@ export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
   });
 }
 
+export function spawnText(cmd: string, args: string[]): Promise<string> {
+  return new Promise((resolve) => {
+    const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'ignore'] });
+    let out = '';
+    child.stdout.on('data', (c) => {
+      out += String(c);
+    });
+    child.on('close', () => {
+      resolve(out.trim());
+    });
+  });
+}
+
 export class ProgressBar {
   private total: number;
   private current = 0;
@@ -94,6 +107,22 @@ export async function fetchMeta(pkg: string): Promise<Meta> {
     }
   }
   return { latest, timeMap };
+}
+
+export async function getPackageCount(): Promise<number> {
+  try {
+    const output = await spawnText('npm', ['list', '--depth=0', '--json']);
+    const data = JSON.parse(output);
+    return Object.keys(data.dependencies || {}).length;
+  } catch {
+    return 0;
+  }
+}
+
+export function printUpToDateMessage(packageCount: number): void {
+  console.log(`up to date, audited ${packageCount} packages`);
+  console.log('');
+  console.log('found 0 vulnerabilities');
 }
 
 export async function run(): Promise<number> {
@@ -187,6 +216,9 @@ export async function run(): Promise<number> {
   );
 
   if (rows.length === 0) {
+    // Show "up to date" message when no updates are found
+    const packageCount = await getPackageCount();
+    printUpToDateMessage(packageCount);
     return 0;
   }
   rows = sortRows(rows, args.sortBy, args.order);

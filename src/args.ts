@@ -126,18 +126,27 @@ export function cleanupAndSaveSkipFile(
       return false;
     }
 
+    const outdatedInfo = outdated[pkg];
+
     // If no version specified, keep the entry (package is still outdated)
     if (!version) {
       return true;
     }
 
-    // If version specified, only keep if:
-    // 1. The latest version is not higher than the skip version AND
-    // 2. The wanted version hasn't changed (wanted equals current)
-    const outdatedInfo = outdated[pkg];
-    const latestNotHigher = !isVersionHigher(outdatedInfo.latest, version);
-    const wantedUnchanged = outdatedInfo.wanted === outdatedInfo.current;
-    return latestNotHigher && wantedUnchanged;
+    // If version specified, remove the entry if:
+    // 1. The current version is now the same as or higher than the skip version, OR
+    // 2. The wanted version is now the same as or higher than the skip version
+    const currentIsSkipVersionOrHigher =
+      outdatedInfo.current === version ||
+      isVersionHigher(outdatedInfo.current, version);
+    const wantedIsSkipVersionOrHigher =
+      outdatedInfo.wanted === version ||
+      isVersionHigher(outdatedInfo.wanted, version);
+
+    // Keep the entry only if neither current nor wanted version has reached the skip version
+    const shouldKeep =
+      !currentIsSkipVersionOrHigher && !wantedIsSkipVersionOrHigher;
+    return shouldKeep;
   });
 
   // Only update file if packages were removed

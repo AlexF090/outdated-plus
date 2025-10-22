@@ -1,5 +1,8 @@
-import { describe, expect, it } from 'vitest';
-import { parseArgs } from '../src/args.js';
+import { existsSync, readFileSync, unlinkSync } from 'node:fs';
+import { join } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { cleanupAndSaveSkipFile, parseArgs } from '../src/args.js';
+import type { OutdatedMap, SkipFileConfig } from '../src/lib/types.js';
 
 describe('parseArgs', () => {
   it('should parse default arguments', () => {
@@ -134,5 +137,212 @@ describe('parseArgs', () => {
   it('should default to empty skip array when no skip options provided', () => {
     const result = parseArgs(['node', 'script.js']);
     expect(result.skip).toEqual([]);
+  });
+});
+
+describe('cleanupAndSaveSkipFile', () => {
+  const testFilePath = join(process.cwd(), '.test-outdated-plus-skip');
+
+  beforeEach(() => {
+    // Clean up any existing test file
+    if (existsSync(testFilePath)) {
+      unlinkSync(testFilePath);
+    }
+  });
+
+  afterEach(() => {
+    // Clean up test file after each test
+    if (existsSync(testFilePath)) {
+      unlinkSync(testFilePath);
+    }
+  });
+
+  it('should return early if no skip config or file path', () => {
+    cleanupAndSaveSkipFile(null, null, {});
+    expect(existsSync(testFilePath)).toBe(false);
+
+    cleanupAndSaveSkipFile({ packages: [], reason: 'test' }, null, {});
+    expect(existsSync(testFilePath)).toBe(false);
+  });
+
+  it('should return early if autoCleanup is disabled', () => {
+    const skipConfig: SkipFileConfig = {
+      packages: ['react@18.0.0'],
+      reason: 'test',
+      autoCleanup: false,
+    };
+    const outdated: OutdatedMap = {
+      react: {
+        current: '17.0.0',
+        wanted: '18.0.0',
+        latest: '18.2.0',
+        location: '',
+        dependent: '',
+        type: 'dependencies',
+      },
+    };
+
+    cleanupAndSaveSkipFile(skipConfig, testFilePath, outdated);
+    expect(existsSync(testFilePath)).toBe(false);
+  });
+
+  it('should remove package entries that are no longer outdated', () => {
+    const skipConfig: SkipFileConfig = {
+      packages: ['react@18.0.0', 'vue@3.0.0'],
+      reason: 'test',
+      autoCleanup: true,
+    };
+    const outdated: OutdatedMap = {
+      react: {
+        current: '17.0.0',
+        wanted: '17.2.0', // wanted is below skip version, so entry should be kept
+        latest: '18.2.0',
+        location: '',
+        dependent: '',
+        type: 'dependencies',
+      },
+      // vue is not in outdated list anymore, so it should be removed
+    };
+
+    cleanupAndSaveSkipFile(skipConfig, testFilePath, outdated);
+    expect(existsSync(testFilePath)).toBe(true);
+
+    const content = JSON.parse(readFileSync(testFilePath, 'utf-8'));
+    expect(content.packages).toEqual(['react@18.0.0']); // Only react should remain
+  });
+
+  it('should remove version entries when current version reaches skip version', () => {
+    const skipConfig: SkipFileConfig = {
+      packages: ['react@18.0.0', 'vue@3.0.0'],
+      reason: 'test',
+      autoCleanup: true,
+    };
+    const outdated: OutdatedMap = {
+      react: {
+        current: '18.0.0', // Now at skip version, so react@18.0.0 should be removed
+        wanted: '18.2.0',
+        latest: '18.2.0',
+        location: '',
+        dependent: '',
+        type: 'dependencies',
+      },
+      vue: {
+        current: '2.9.0',
+        wanted: '2.9.5', // wanted is below skip version, so vue@3.0.0 should be kept
+        latest: '3.2.0',
+        location: '',
+        dependent: '',
+        type: 'dependencies',
+      },
+    };
+
+    cleanupAndSaveSkipFile(skipConfig, testFilePath, outdated);
+    expect(existsSync(testFilePath)).toBe(true);
+
+    const content = JSON.parse(readFileSync(testFilePath, 'utf-8'));
+    expect(content.packages).toEqual(['vue@3.0.0']);
+  });
+
+  it('should remove version entries when wanted version reaches skip version', () => {
+    const skipConfig: SkipFileConfig = {
+      packages: ['react@18.0.0'],
+      reason: 'test',
+      autoCleanup: true,
+    };
+    const outdated: OutdatedMap = {
+      react: {
+        current: '17.0.0',
+        wanted: '18.0.0', // Wanted is now at skip version
+        latest: '18.2.0',
+        location: '',
+        dependent: '',
+        type: 'dependencies',
+      },
+    };
+
+    cleanupAndSaveSkipFile(skipConfig, testFilePath, outdated);
+    expect(existsSync(testFilePath)).toBe(true);
+
+    const content = JSON.parse(readFileSync(testFilePath, 'utf-8'));
+    expect(content.packages).toEqual([]);
+  });
+
+  it('should keep version entries when neither current nor wanted reached skip version', () => {
+    const skipConfig: SkipFileConfig = {
+      packages: ['react@18.0.0'],
+      reason: 'test',
+      autoCleanup: true,
+    };
+    const outdated: OutdatedMap = {
+      react: {
+        current: '17.0.0',
+        wanted: '17.2.0', // Both below skip version
+        latest: '18.2.0',
+        location: '',
+        dependent: '',
+        type: 'dependencies',
+      },
+    };
+
+    cleanupAndSaveSkipFile(skipConfig, testFilePath, outdated);
+    expect(existsSync(testFilePath)).toBe(false);
+  });
+
+  it('should keep package entries without version specification', () => {
+    const skipConfig: SkipFileConfig = {
+      packages: ['react', 'vue@3.0.0'],
+      reason: 'test',
+      autoCleanup: true,
+    };
+    const outdated: OutdatedMap = {
+      react: {
+        current: '17.0.0',
+        wanted: '18.0.0',
+        latest: '18.2.0',
+        location: '',
+        dependent: '',
+        type: 'dependencies',
+      },
+      vue: {
+        current: '2.9.0',
+        wanted: '3.0.0', // wanted equals skip version, so vue@3.0.0 should be removed
+        latest: '3.2.0',
+        location: '',
+        dependent: '',
+        type: 'dependencies',
+      },
+    };
+
+    cleanupAndSaveSkipFile(skipConfig, testFilePath, outdated);
+    expect(existsSync(testFilePath)).toBe(true);
+
+    const content = JSON.parse(readFileSync(testFilePath, 'utf-8'));
+    expect(content.packages).toEqual(['react']); // Only react should remain
+  });
+
+  it('should handle write errors gracefully', () => {
+    const skipConfig: SkipFileConfig = {
+      packages: ['react@18.0.0'],
+      reason: 'test',
+      autoCleanup: true,
+    };
+    const outdated: OutdatedMap = {
+      react: {
+        current: '18.0.0',
+        wanted: '18.2.0',
+        latest: '18.2.0',
+        location: '',
+        dependent: '',
+        type: 'dependencies',
+      },
+    };
+
+    // Use an invalid path to trigger write error
+    const invalidPath = '/invalid/path/that/does/not/exist/test-skip.json';
+
+    // Should not throw
+    expect(() => {
+      cleanupAndSaveSkipFile(skipConfig, invalidPath, outdated);
+    }).not.toThrow();
   });
 });
