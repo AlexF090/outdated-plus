@@ -100,13 +100,6 @@ export function bumpType(
   return 'unknown';
 }
 
-export function cleanupSkipList(
-  skipPackages: string[],
-  outdatedPackages: string[],
-): string[] {
-  return skipPackages.filter((pkg) => outdatedPackages.includes(pkg));
-}
-
 export function parseSkipEntry(entry: string): {
   package: string;
   version?: string;

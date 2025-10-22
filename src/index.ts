@@ -2,7 +2,7 @@
 /**
  * outdated-plus -- Node/TS CLI
  * Mirrors the Python version: shows Published/Age for Wanted and Latest,
- * supports sorting and output formats plain|tsv|md.
+ * supports sorting and output formats plain|md.
  */
 
 import { spawn } from 'node:child_process';
@@ -11,12 +11,7 @@ import {
   cleanupAndSaveSkipFile,
   parseArgs,
 } from './args.js';
-import {
-  printMarkdown,
-  printPlain,
-  printSkippedInfo,
-  printTsv,
-} from './lib/output.js';
+import { printMarkdown, printPlain, printSkippedInfo } from './lib/output.js';
 import { buildRows, sortRows } from './lib/processing.js';
 import type { Meta, OutdatedMap } from './lib/types.js';
 import { parseSkipEntry, shouldSkipPackage } from './lib/utils.js';
@@ -216,17 +211,18 @@ export async function run(): Promise<number> {
   );
 
   if (rows.length === 0) {
-    // Show "up to date" message when no updates are found
-    const packageCount = await getPackageCount();
-    printUpToDateMessage(packageCount);
+    // Only show "up to date" message if no filtering was applied
+    // (i.e., when there are truly no outdated packages)
+    const hasFiltering = args.olderThan > 0 || args.skip.length > 0;
+    if (!hasFiltering) {
+      const packageCount = await getPackageCount();
+      printUpToDateMessage(packageCount);
+    }
     return 0;
   }
   rows = sortRows(rows, args.sortBy, args.order);
 
   switch (args.format) {
-    case 'tsv':
-      printTsv(rows);
-      break;
     case 'md':
       printMarkdown(rows);
       break;

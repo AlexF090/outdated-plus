@@ -2,7 +2,7 @@ import type { Row } from './types.js';
 
 export function printSkippedInfo(
   skippedPackages: string[],
-  format: 'plain' | 'tsv' | 'md',
+  format: 'plain' | 'md',
 ) {
   if (skippedPackages.length === 0) {
     return;
@@ -11,9 +11,6 @@ export function printSkippedInfo(
   const message = `Skipped ${skippedPackages.length} package(s): ${skippedPackages.join(', ')}`;
 
   switch (format) {
-    case 'tsv':
-      console.log(`# ${message}`);
-      break;
     case 'md':
       console.log(`> **Note:** ${message}`);
       console.log('');
@@ -61,38 +58,6 @@ export function printPlain(rows: Row[]) {
   console.log(fmt(widths.map((w) => '-'.repeat(w))));
   for (const r of rows) {
     console.log(fmt(mapRow(r)));
-  }
-}
-
-export function printTsv(rows: Row[]) {
-  const headers = [
-    'Package',
-    'Current',
-    'Wanted',
-    'To Wanted',
-    'Latest',
-    'To Latest',
-    'Published (Wanted)',
-    'Age(d) (Wanted)',
-    'Published (Latest)',
-    'Age(d) (Latest)',
-  ];
-  console.log(headers.join('\t'));
-  for (const r of rows) {
-    console.log(
-      [
-        r.Package,
-        r.Current,
-        r.Wanted,
-        r.ToWanted,
-        r.Latest,
-        r.ToLatest,
-        r.PublishedWanted,
-        r.AgeWanted,
-        r.PublishedLatest,
-        r.AgeLatest,
-      ].join('\t'),
-    );
   }
 }
 

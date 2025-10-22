@@ -184,22 +184,22 @@ describe('Integration Tests', () => {
     const originalArgv = process.argv;
 
     try {
-      process.argv = ['node', 'script.js', '--format', 'tsv'];
-      await run();
-
-      const tsvCalls = consoleSpy.mock.calls;
-      if (tsvCalls.length > 0) {
-        expect(tsvCalls[0][0]).toContain('\t');
-      }
-
-      consoleSpy.mockClear();
-
-      process.argv = ['node', 'script.js', '--format', 'md'];
+      process.argv = ['node', 'script.js', '--format', 'md', '--show-all'];
       await run();
 
       const mdCalls = consoleSpy.mock.calls;
       if (mdCalls.length > 0) {
         expect(mdCalls[0][0]).toContain('|');
+      }
+
+      consoleSpy.mockClear();
+
+      process.argv = ['node', 'script.js', '--format', 'plain', '--show-all'];
+      await run();
+
+      const plainCalls = consoleSpy.mock.calls;
+      if (plainCalls.length > 0) {
+        expect(plainCalls[0][0]).toContain('Package');
       }
     } finally {
       process.argv = originalArgv;

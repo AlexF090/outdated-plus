@@ -3,7 +3,6 @@ import {
   printMarkdown,
   printPlain,
   printSkippedInfo,
-  printTsv,
 } from '../src/lib/output.js';
 import type { Row } from '../src/lib/types.js';
 
@@ -99,35 +98,6 @@ describe('Output Functions', () => {
     });
   });
 
-  describe('printTsv', () => {
-    it('should print TSV headers', () => {
-      printTsv(mockRows);
-
-      const calls = consoleSpy.mock.calls;
-      expect(calls[0][0]).toBe(
-        'Package\tCurrent\tWanted\tTo Wanted\tLatest\tTo Latest\tPublished (Wanted)\tAge(d) (Wanted)\tPublished (Latest)\tAge(d) (Latest)',
-      );
-    });
-
-    it('should print TSV data rows', () => {
-      printTsv(mockRows);
-
-      const calls = consoleSpy.mock.calls;
-      expect(calls).toHaveLength(3);
-
-      const dataRow = calls[1][0];
-      expect(dataRow).toContain('package-a\t1.0.0\t1.1.0\tminor\t2.0.0\tmajor');
-    });
-
-    it('should handle empty rows array', () => {
-      printTsv([]);
-
-      const calls = consoleSpy.mock.calls;
-      expect(calls).toHaveLength(1);
-      expect(calls[0][0]).toContain('Package\tCurrent');
-    });
-  });
-
   describe('printMarkdown', () => {
     it('should print markdown table headers', () => {
       printMarkdown(mockRows);
@@ -214,15 +184,6 @@ describe('Output Functions', () => {
       expect(consoleSpy.mock.calls[1][0]).toBe('');
     });
 
-    it('should print skipped packages info in tsv format', () => {
-      printSkippedInfo(['react', 'vue'], 'tsv');
-
-      expect(consoleSpy).toHaveBeenCalledTimes(1);
-      expect(consoleSpy.mock.calls[0][0]).toBe(
-        '# Skipped 2 package(s): react, vue',
-      );
-    });
-
     it('should print skipped packages info in markdown format', () => {
       printSkippedInfo(['react', 'vue'], 'md');
 
@@ -250,18 +211,12 @@ describe('Output Functions', () => {
       const plainCalls = plainSpy.mock.calls.length;
       plainSpy.mockRestore();
 
-      const tsvSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
-      printTsv(mockRows);
-      const tsvCalls = tsvSpy.mock.calls.length;
-      tsvSpy.mockRestore();
-
       const mdSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       printMarkdown(mockRows);
       const mdCalls = mdSpy.mock.calls.length;
       mdSpy.mockRestore();
 
       expect(plainCalls).toBe(4);
-      expect(tsvCalls).toBe(3);
       expect(mdCalls).toBe(4);
     });
   });

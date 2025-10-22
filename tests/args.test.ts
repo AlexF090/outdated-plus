@@ -31,7 +31,7 @@ describe('parseArgs', () => {
       '--order',
       'asc',
       '--format',
-      'tsv',
+      'md',
     ]);
     expect(result.olderThan).toBe(30);
     expect(result.showAll).toBe(true);
@@ -39,7 +39,7 @@ describe('parseArgs', () => {
     expect(result.concurrency).toBe(5);
     expect(result.sortBy).toBe('name');
     expect(result.order).toBe('asc');
-    expect(result.format).toBe('tsv');
+    expect(result.format).toBe('md');
   });
 
   it('should handle boolean flags', () => {
@@ -101,7 +101,7 @@ describe('parseArgs', () => {
   });
 
   it('should handle all format options', () => {
-    const formats = ['plain', 'tsv', 'md'];
+    const formats = ['plain', 'md'];
 
     for (const format of formats) {
       const result = parseArgs(['node', 'script.js', '--format', format]);
