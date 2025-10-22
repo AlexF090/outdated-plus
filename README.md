@@ -66,6 +66,31 @@ The tool displays the following information for each outdated package:
 - **Published (Latest)**: When the latest version was published
 - **Age(d) (Latest)**: Days since latest version was published
 
+### Example Output
+
+#### Plain Text Format (default)
+```
+Package     Current  Wanted  To Wanted  Latest  To Latest  Published (Wanted)  Age(d) (Wanted)  Published (Latest)  Age(d) (Latest)
+----------  -------  ------  ---------  ------  ---------  ------------------  ---------------  ------------------  ---------------
+package-a   1.0.0    1.1.0   minor      2.0.0   major      2023-11-01 10:00   30               2023-11-15 10:00    16
+package-b   2.0.0    2.0.0   same       2.1.0   minor      2023-10-01 10:00   61               2023-11-20 10:00    11
+```
+
+#### Markdown Format (`--format md`)
+```markdown
+| Package | Current | Wanted | To Wanted | Latest | To Latest | Published (Wanted) | Age(d) (Wanted) | Published (Latest) | Age(d) (Latest) |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| package-a | 1.0.0 | 1.1.0 | minor | 2.0.0 | major | 2023-11-01 10:00 | 30 | 2023-11-15 10:00 | 16 |
+| package-b | 2.0.0 | 2.0.0 | same | 2.1.0 | minor | 2023-10-01 10:00 | 61 | 2023-11-20 10:00 | 11 |
+```
+
+#### TSV Format (`--format tsv`)
+```
+Package	Current	Wanted	To Wanted	Latest	To Latest	Published (Wanted)	Age(d) (Wanted)	Published (Latest)	Age(d) (Latest)
+package-a	1.0.0	1.1.0	minor	2.0.0	major	2023-11-01 10:00	30	2023-11-15 10:00	16
+package-b	2.0.0	2.0.0	same	2.1.0	minor	2023-10-01 10:00	61	2023-11-20 10:00	11
+```
+
 ## Skip Dependencies
 
 You can skip specific packages or versions from the output using the `--skip` flag or a configuration file.
