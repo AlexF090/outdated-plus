@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { Meta, OutdatedMap } from '../src/types.js';
+import type { Meta, OutdatedMap } from '../src/lib/types.js';
 
 vi.mock('node:child_process');
 
@@ -129,7 +129,7 @@ describe('Integration Tests', () => {
         return createMockChild(JSON.stringify(mockOutdatedData)) as any;
       }
       if (cmd === 'npm' && args.includes('view')) {
-        concurrentCalls++;
+        concurrentCalls += 1;
         maxConcurrent = Math.max(maxConcurrent, concurrentCalls);
 
         const packageName = args[1];
@@ -142,7 +142,7 @@ describe('Integration Tests', () => {
           stdout: {
             on: vi.fn((event, callback) => {
               if (event === 'data') {
-                concurrentCalls--;
+                concurrentCalls -= 1;
                 callback(JSON.stringify(metaData));
               }
             }),
