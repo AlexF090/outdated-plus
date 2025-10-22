@@ -162,6 +162,11 @@ describe('parseSkipEntry', () => {
     expect(result).toEqual({ package: '@types/react', version: '18.2.0' });
   });
 
+  it('should handle scoped packages without version', () => {
+    const result = parseSkipEntry('@types/react');
+    expect(result).toEqual({ package: '@types/react' });
+  });
+
   it('should handle packages with @ in name', () => {
     const result = parseSkipEntry('some-package@name@1.0.0');
     expect(result).toEqual({ package: 'some-package@name', version: '1.0.0' });

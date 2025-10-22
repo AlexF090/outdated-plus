@@ -81,9 +81,10 @@ export function parseSkipEntry(entry: string): {
 } {
   let atIndex: number;
   if (entry.startsWith('@')) {
-    // Find the second '@' (the version separator, if present)
+    // For scoped packages, find the second '@' (the version separator, if present)
     atIndex = entry.indexOf('@', 1);
   } else {
+    // For non-scoped packages, find the last '@' to handle cases like 'package@name@1.0.0'
     atIndex = entry.lastIndexOf('@');
   }
 
