@@ -115,9 +115,7 @@ export async function getPackageCount(): Promise<number> {
 }
 
 export function printUpToDateMessage(packageCount: number): void {
-  console.log(`up to date, audited ${packageCount} packages`);
-  console.log('');
-  console.log('found 0 vulnerabilities');
+  console.log(`No updates available (${packageCount} packages checked)`);
 }
 
 export async function run(): Promise<number> {
