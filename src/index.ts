@@ -15,6 +15,7 @@ import {
 } from './lib/output.js';
 import { buildRows, sortRows } from './lib/processing.js';
 import type { Meta, OutdatedMap } from './lib/types.js';
+import { parseSkipEntry } from './lib/utils.js';
 
 export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
   return new Promise((resolve) => {
@@ -151,7 +152,10 @@ export async function run(): Promise<number> {
   );
 
   // Show skipped packages info
-  const skippedPackages = args.skip.filter((pkg) => outdated[pkg]);
+  const skippedPackages = args.skip.filter((entry) => {
+    const { package: pkg } = parseSkipEntry(entry);
+    return outdated[pkg];
+  });
   printSkippedInfo(skippedPackages, args.format);
 
   // Auto-cleanup skip file

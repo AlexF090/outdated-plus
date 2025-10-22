@@ -135,11 +135,6 @@ outdated-plus
 outdated-plus --skip "react-refresh@7.0.0,typescript@5.0.0"
 ```
 
-### Skip entire packages
-```bash
-outdated-plus --skip "react,vue,angular"
-```
-
 ### Mix of package and version skips
 ```bash
 outdated-plus --skip "react,react-refresh@7.0.0,vue@3.2.0"

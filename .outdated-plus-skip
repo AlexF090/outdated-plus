@@ -1,7 +1,5 @@
 {
-  "packages": [
-    "eslint-plugin-react-hooks@7.0.0"
-  ],
+  "packages": [],
   "reason": "Test version-specific skip functionality",
   "autoCleanup": true
 }

@@ -79,7 +79,14 @@ export function parseSkipEntry(entry: string): {
   package: string;
   version?: string;
 } {
-  const atIndex = entry.lastIndexOf('@');
+  let atIndex: number;
+  if (entry.startsWith('@')) {
+    // Find the second '@' (the version separator, if present)
+    atIndex = entry.indexOf('@', 1);
+  } else {
+    atIndex = entry.lastIndexOf('@');
+  }
+
   if (atIndex === -1) {
     return { package: entry };
   }
