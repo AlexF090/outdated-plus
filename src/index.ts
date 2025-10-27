@@ -75,7 +75,7 @@ export class ProgressBar {
   }
 }
 
-export async function fetchMeta(pkg: string): Promise<Meta> {
+export async function fetchMeta(pkg: string, latestVersion?: string): Promise<Meta> {
   const data = (await spawnJson('npm', [
     'view',
     pkg,
@@ -101,6 +101,32 @@ export async function fetchMeta(pkg: string): Promise<Meta> {
       }
     }
   }
+
+  // If we have a specific latest version from npm outdated, fetch its time
+  if (latestVersion && latestVersion !== latest && !timeMap[latestVersion]) {
+    try {
+      const versionData = (await spawnJson('npm', [
+        'view',
+        `${pkg}@${latestVersion}`,
+        'time',
+        '--json',
+      ])) as Record<string, unknown>;
+      
+      if (versionData && typeof versionData === 'object') {
+        const versionTime = versionData.time;
+        if (versionTime && typeof versionTime === 'object') {
+          for (const [k, v] of Object.entries(versionTime)) {
+            if (typeof v === 'string') {
+              timeMap[k] = v;
+            }
+          }
+        }
+      }
+    } catch {
+      // Ignore errors when fetching specific version data
+    }
+  }
+
   return { latest, timeMap };
 }
 
@@ -145,7 +171,7 @@ export async function run(): Promise<number> {
         const p = pkgs[index];
         index += 1;
         inFlight += 1;
-        fetchMeta(p)
+        fetchMeta(p, outdated[p].latest)
           .then((m) => {
             metas[p] = m;
           })
