@@ -75,7 +75,10 @@ export class ProgressBar {
   }
 }
 
-export async function fetchMeta(pkg: string, latestVersion?: string): Promise<Meta> {
+export async function fetchMeta(
+  pkg: string,
+  latestVersion?: string,
+): Promise<Meta> {
   const data = (await spawnJson('npm', [
     'view',
     pkg,
@@ -103,7 +106,7 @@ export async function fetchMeta(pkg: string, latestVersion?: string): Promise<Me
   }
 
   // If we have a specific latest version from npm outdated, fetch its time
-  if (latestVersion && latestVersion !== latest && !timeMap[latestVersion]) {
+  if (latestVersion && !timeMap[latestVersion]) {
     try {
       const versionData = (await spawnJson('npm', [
         'view',
@@ -111,7 +114,7 @@ export async function fetchMeta(pkg: string, latestVersion?: string): Promise<Me
         'time',
         '--json',
       ])) as Record<string, unknown>;
-      
+
       if (versionData && typeof versionData === 'object') {
         const versionTime = versionData.time;
         if (versionTime && typeof versionTime === 'object') {
