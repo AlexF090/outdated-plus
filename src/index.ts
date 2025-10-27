@@ -79,75 +79,31 @@ export async function fetchMeta(
   pkg: string,
   latestVersion?: string,
 ): Promise<Meta> {
-  const data = (await spawnJson('npm', [
-    'view',
-    pkg,
-    'time',
-    'dist-tags.latest',
-    '--json',
-  ])) as Record<string, unknown>;
+  // Fetch all package metadata in a single call
+  const data = (await spawnJson('npm', ['view', pkg, '--json'])) as Record<
+    string,
+    unknown
+  >;
   let latest = '';
   const timeMap: Record<string, string> = {};
+
   if (data && typeof data === 'object') {
+    // Extract dist-tags.latest
     const dt = data['dist-tags'];
     if (dt && typeof dt === 'object') {
       latest = String((dt as Record<string, unknown>).latest ?? '');
     } else {
+      // Fallback for alternative structure
       latest = String(data['dist-tags.latest'] ?? '');
     }
+
+    // Extract all time data
     const tm = data.time;
     if (tm && typeof tm === 'object') {
       for (const [k, v] of Object.entries(tm)) {
         if (typeof v === 'string') {
           timeMap[k] = v;
         }
-      }
-    }
-  }
-
-  // If we have a specific latest version from npm outdated, fetch its time
-  if (latestVersion && !timeMap[latestVersion]) {
-    try {
-      // First, try to get version info with cache to get access to time object
-      const allVersions = await spawnJson('npm', [
-        'view',
-        pkg,
-        '--json',
-        '--cache',
-        '1m',
-      ]) as Record<string, unknown>;
-      
-      if (allVersions && typeof allVersions === 'object') {
-        const time = allVersions.time;
-        if (time && typeof time === 'object') {
-          const timeMapEntry = (time as Record<string, unknown>)[latestVersion];
-          if (typeof timeMapEntry === 'string') {
-            timeMap[latestVersion] = timeMapEntry;
-          }
-        }
-      }
-    } catch {
-      // Fallback: try fetching specific version
-      try {
-        const versionData = (await spawnJson('npm', [
-          'view',
-          `${pkg}@${latestVersion}`,
-          'time',
-          '--json',
-        ])) as Record<string, unknown>;
-
-        if (versionData && typeof versionData === 'object' && versionData !== null) {
-          const timeValue = versionData.time;
-          if (typeof timeValue === 'object' && timeValue !== null) {
-            for (const [k, v] of Object.entries(timeValue)) {
-              if (typeof v === 'string') {
-                timeMap[k] = v;
-              }
-            }
-          }
-        }
-      } catch {
-        // Ignore errors
       }
     }
   }
