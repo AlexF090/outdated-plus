@@ -108,25 +108,47 @@ export async function fetchMeta(
   // If we have a specific latest version from npm outdated, fetch its time
   if (latestVersion && !timeMap[latestVersion]) {
     try {
-      const versionData = (await spawnJson('npm', [
+      // First, try to get version info with cache to get access to time object
+      const allVersions = await spawnJson('npm', [
         'view',
-        `${pkg}@${latestVersion}`,
-        'time',
+        pkg,
         '--json',
-      ])) as Record<string, unknown>;
-
-      if (versionData && typeof versionData === 'object') {
-        const versionTime = versionData.time;
-        if (versionTime && typeof versionTime === 'object') {
-          for (const [k, v] of Object.entries(versionTime)) {
-            if (typeof v === 'string') {
-              timeMap[k] = v;
-            }
+        '--cache',
+        '1m',
+      ]) as Record<string, unknown>;
+      
+      if (allVersions && typeof allVersions === 'object') {
+        const time = allVersions.time;
+        if (time && typeof time === 'object') {
+          const timeMapEntry = (time as Record<string, unknown>)[latestVersion];
+          if (typeof timeMapEntry === 'string') {
+            timeMap[latestVersion] = timeMapEntry;
           }
         }
       }
     } catch {
-      // Ignore errors when fetching specific version data
+      // Fallback: try fetching specific version
+      try {
+        const versionData = (await spawnJson('npm', [
+          'view',
+          `${pkg}@${latestVersion}`,
+          'time',
+          '--json',
+        ])) as Record<string, unknown>;
+
+        if (versionData && typeof versionData === 'object' && versionData !== null) {
+          const timeValue = versionData.time;
+          if (typeof timeValue === 'object' && timeValue !== null) {
+            for (const [k, v] of Object.entries(timeValue)) {
+              if (typeof v === 'string') {
+                timeMap[k] = v;
+              }
+            }
+          }
+        }
+      } catch {
+        // Ignore errors
+      }
     }
   }
 
