@@ -33,7 +33,14 @@ export function buildRows(
     const wanted = info.wanted ?? '';
     const latestFromOut = info.latest ?? '';
     const m = metas[pkg] ?? { latest: '', timeMap: {} };
-    const latest = m.latest || latestFromOut || '';
+    // Use latest from npm outdated as the source of truth
+    const latest = latestFromOut || m.latest || '';
+
+    // Skip packages where current, wanted, and latest are all identical
+    // These are not actually outdated according to npm's definition
+    if (current === wanted && current === latest && current !== '') {
+      continue;
+    }
     const dtWanted = parseIsoZ(m.timeMap[wanted]);
     const dtLatest = parseIsoZ(m.timeMap[latest]);
     const ageWanted = daysAgo(dtWanted);

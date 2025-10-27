@@ -25,6 +25,11 @@ describe('buildRows', () => {
       wanted: '2.0.0',
       latest: '2.1.0',
     },
+    'package-c': {
+      current: '1.0.0',
+      wanted: '1.0.0',
+      latest: '1.0.0',
+    },
   };
 
   const mockMetas: Record<string, Meta> = {
@@ -41,6 +46,12 @@ describe('buildRows', () => {
         '2.1.0': '2023-11-20T10:00:00Z',
       },
     },
+    'package-c': {
+      latest: '1.0.0',
+      timeMap: {
+        '1.0.0': '2023-10-01T10:00:00Z',
+      },
+    },
   };
 
   it('should build rows with all packages when showAll is true', () => {
@@ -48,6 +59,12 @@ describe('buildRows', () => {
     expect(rows).toHaveLength(2);
     expect(rows[0].Package).toBe('package-a');
     expect(rows[1].Package).toBe('package-b');
+  });
+
+  it('should skip packages where current, wanted, and latest are identical', () => {
+    const rows = buildRows(mockOutdated, mockMetas, true, 0, false);
+    expect(rows).toHaveLength(2);
+    expect(rows.some((r) => r.Package === 'package-c')).toBe(false);
   });
 
   it('should filter packages by age when showAll is false', () => {
