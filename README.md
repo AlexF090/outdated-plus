@@ -169,7 +169,7 @@ outdated-plus --skip "react,react-refresh@7.0.0,vue@3.2.0"
 ## Development
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 22+ (LTS)
 - TypeScript 5+
 
 ### Setup

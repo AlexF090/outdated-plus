@@ -21,7 +21,13 @@
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format": "prettier --write src tests",
-    "format:check": "prettier --check src tests"
+    "format:check": "prettier --check src tests",
+    "audit": "npm audit",
+    "audit:fix": "npm audit fix",
+    "audit:signatures": "npm audit signatures",
+    "security:check": "npm run audit && npm run audit:signatures",
+    "ci": "npm ci",
+    "install:clean": "rm -rf node_modules package-lock.json && npm install"
   },
   "keywords": [
     "npm",
@@ -35,7 +41,8 @@
   "license": "ISC",
   "type": "commonjs",
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=22.0.0",
+    "npm": ">=11.0.0"
   },
   "repository": {
     "type": "git",
@@ -46,14 +53,14 @@
   },
   "homepage": "https://github.com/AlexF090/outdated-plus#readme",
   "devDependencies": {
-    "@types/node": "^24.9.1",
-    "@typescript-eslint/eslint-plugin": "^8.46.2",
-    "@typescript-eslint/parser": "^8.46.2",
-    "eslint": "^9.35.0",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.4",
-    "prettier": "^3.6.2",
-    "typescript": "^5.9.3",
-    "vitest": "^3.2.4"
+    "@types/node": "24.9.1",
+    "@typescript-eslint/eslint-plugin": "8.46.2",
+    "@typescript-eslint/parser": "8.46.2",
+    "eslint": "9.35.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-prettier": "5.5.4",
+    "prettier": "3.6.2",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
   }
 }
