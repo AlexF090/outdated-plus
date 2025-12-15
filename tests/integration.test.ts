@@ -45,16 +45,12 @@ describe('Integration Tests', () => {
     const stderrSpy = vi
       .spyOn(process.stderr, 'write')
       .mockImplementation(() => true);
-    Object.defineProperty(process.stderr, 'isTTY', {
-      value: true,
-      writable: true,
-      configurable: true,
-    });
 
     const { ProgressBar } = await import('../src/index.js');
-    const pb = new ProgressBar(10, true); // quiet = true
+    const pb = new ProgressBar(10, true);
 
     pb.update(1);
+    pb.finish();
     expect(stderrSpy).not.toHaveBeenCalled();
 
     stderrSpy.mockRestore();
