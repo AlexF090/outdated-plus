@@ -11,13 +11,24 @@ export type Meta = {
   timeMap: Record<string, string>;
 };
 
+export interface NpmRegistryResponse {
+  'dist-tags'?: {
+    latest?: string;
+    [tag: string]: string | undefined;
+  };
+  time?: Record<string, unknown>;
+  versions?: Record<string, unknown>;
+  name?: string;
+  description?: string;
+}
+
 export type Row = {
   Package: string;
   Current: string;
   Wanted: string;
-  ToWanted: string;
+  ToWanted: BumpType;
   Latest: string;
-  ToLatest: string;
+  ToLatest: BumpType;
   PublishedWanted: string;
   AgeWanted: string;
   PublishedLatest: string;
@@ -62,3 +73,11 @@ export type SkipFileConfig = {
   reason?: string;
   autoCleanup?: boolean;
 };
+
+export type BumpType =
+  | 'major'
+  | 'minor'
+  | 'patch'
+  | 'prerelease'
+  | 'same'
+  | 'unknown';

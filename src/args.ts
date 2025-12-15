@@ -3,6 +3,29 @@ import { join } from 'node:path';
 import type { Args, OutdatedMap, SkipFileConfig } from './lib/types.js';
 import { isVersionHigher, parseSkipEntry } from './lib/utils.js';
 
+function isSortBy(value: unknown): value is Args['sortBy'] {
+  return (
+    value === 'name' ||
+    value === 'age' ||
+    value === 'published' ||
+    value === 'age_latest' ||
+    value === 'age_wanted' ||
+    value === 'published_latest' ||
+    value === 'published_wanted' ||
+    value === 'current' ||
+    value === 'wanted' ||
+    value === 'latest'
+  );
+}
+
+function isOrder(value: unknown): value is Args['order'] {
+  return value === 'asc' || value === 'desc';
+}
+
+function isFormat(value: unknown): value is Args['format'] {
+  return value === 'plain' || value === 'md';
+}
+
 export function parseArgs(argv: string[]): Args {
   const a = new Map<string, string | true>();
   for (let i = 2; i < argv.length; i += 1) {
@@ -17,11 +40,18 @@ export function parseArgs(argv: string[]): Args {
       }
     }
   }
-  const sortBy = (a.get('--sort-by') as Args['sortBy']) ?? 'published_latest';
-  const order = (a.get('--order') as Args['order']) ?? 'desc';
-  const format = (a.get('--format') as Args['format']) ?? 'plain';
-  const concurrency = Number(a.get('--concurrency') ?? 12);
-  const olderThan = Number(a.get('--older-than') ?? 0);
+  const sortByRaw = a.get('--sort-by');
+  const sortBy = isSortBy(sortByRaw) ? sortByRaw : 'published_latest';
+  const orderRaw = a.get('--order');
+  const order = isOrder(orderRaw) ? orderRaw : 'desc';
+  const formatRaw = a.get('--format');
+  const format = isFormat(formatRaw) ? formatRaw : 'plain';
+  const concurrencyRaw = Number(a.get('--concurrency') ?? 12);
+  const concurrency = Number.isNaN(concurrencyRaw)
+    ? 12
+    : Math.min(100, Math.max(1, concurrencyRaw));
+  const olderThanRaw = Number(a.get('--older-than') ?? 0);
+  const olderThan = Number.isNaN(olderThanRaw) ? 0 : Math.max(0, olderThanRaw);
   const showAll = Boolean(a.get('--show-all'));
   const showWanted = Boolean(a.get('--wanted'));
   const quiet = Boolean(a.get('--quiet'));
@@ -49,7 +79,7 @@ export function parseArgs(argv: string[]): Args {
     // Default file doesn't exist, ignore
   }
 
-  const normalizedSort =
+  const normalizedSort: Args['sortBy'] =
     sortBy === 'age'
       ? 'age_latest'
       : sortBy === 'published'
@@ -62,8 +92,8 @@ export function parseArgs(argv: string[]): Args {
     quiet,
     checkAll,
     iso,
-    concurrency: Math.max(1, concurrency),
-    sortBy: normalizedSort as Args['sortBy'],
+    concurrency,
+    sortBy: normalizedSort,
     order,
     format,
     skip: [...skipPackages, ...fileSkipPackages],

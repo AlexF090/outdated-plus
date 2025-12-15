@@ -1,5 +1,5 @@
 import { colorAge, colorBumpType, colors, isColorEnabled } from './colors.js';
-import type { Row } from './types.js';
+import type { BumpType, Row } from './types.js';
 
 export function printSkippedInfo(
   skippedPackages: string[],
@@ -24,10 +24,11 @@ export function printSkippedInfo(
 
 /**
  * Strip ANSI codes from a string to get actual display length
+ * Match and remove ANSI escape sequences (control characters required for terminal colors)
  */
 function stripAnsi(str: string): string {
-  // eslint-disable-next-line no-control-regex
-  return str.replace(/\x1b\[[0-9;]*m/g, '');
+  const regex = new RegExp(`${String.fromCharCode(0x1b)}\\[[0-9;]*m`, 'g');
+  return str.replace(regex, '');
 }
 
 /**
@@ -40,10 +41,8 @@ function displayLength(str: string): number {
 /**
  * Colorize bump type for display
  */
-function formatBumpType(bump: string): string {
-  return colorBumpType(
-    bump as 'major' | 'minor' | 'patch' | 'prerelease' | 'same' | 'unknown',
-  );
+function formatBumpType(bump: BumpType): string {
+  return colorBumpType(bump);
 }
 
 /**

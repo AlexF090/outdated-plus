@@ -7,7 +7,7 @@ describe('ProgressBar', () => {
   beforeEach(() => {
     consoleSpy = vi
       .spyOn(process.stderr, 'write')
-      .mockImplementation(() => true as any);
+      .mockImplementation(() => true);
     Object.defineProperty(process.stderr, 'isTTY', {
       value: true,
       writable: true,

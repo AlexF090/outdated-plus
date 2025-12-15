@@ -17,7 +17,14 @@ import { formatError, NetworkError, RegistryError } from './lib/errors.js';
 import { printMarkdown, printPlain, printSkippedInfo } from './lib/output.js';
 import { buildRows, sortRows } from './lib/processing.js';
 import type { Meta, OutdatedEntry, OutdatedMap } from './lib/types.js';
-import { parseSkipEntry, shouldSkipPackage } from './lib/utils.js';
+import {
+  extractLatestVersion,
+  extractTimeMap,
+  isOutdatedMap,
+  isValidNpmRegistryResponse,
+  parseSkipEntry,
+  shouldSkipPackage,
+} from './lib/utils.js';
 
 const NPM_REGISTRY = 'https://registry.npmjs.org';
 
@@ -63,12 +70,18 @@ export function spawnText(cmd: string, args: string[]): Promise<string> {
 export async function fetchPackageMeta(pkg: string): Promise<Meta> {
   const url = `${NPM_REGISTRY}/${encodeURIComponent(pkg)}`;
 
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
+
   try {
     const response = await fetch(url, {
       headers: {
         Accept: 'application/json',
       },
+      signal: controller.signal,
     });
+
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -81,34 +94,27 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
       );
     }
 
-    const data = (await response.json()) as Record<string, unknown>;
+    const data: unknown = await response.json();
 
-    let latest = '';
-    const timeMap: Record<string, string> = {};
-
-    if (data && typeof data === 'object') {
-      // Extract dist-tags.latest
-      const dt = data['dist-tags'];
-      if (dt && typeof dt === 'object') {
-        latest = String((dt as Record<string, unknown>).latest ?? '');
-      }
-
-      // Extract all time data
-      const tm = data.time;
-      if (tm && typeof tm === 'object') {
-        for (const [k, v] of Object.entries(tm)) {
-          if (typeof v === 'string') {
-            timeMap[k] = v;
-          }
-        }
-      }
+    if (!isValidNpmRegistryResponse(data)) {
+      throw new RegistryError('Invalid registry response format', pkg);
     }
+
+    const latest = extractLatestVersion(data);
+    const timeMap = extractTimeMap(data);
 
     return { latest, timeMap };
   } catch (error) {
+    clearTimeout(timeoutId);
+
     if (error instanceof NetworkError || error instanceof RegistryError) {
       throw error;
     }
+
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw new NetworkError('Request timeout', url);
+    }
+
     throw new NetworkError(
       error instanceof Error ? error.message : 'Unknown network error',
       url,
@@ -136,6 +142,18 @@ export function readPackageJson(cwd: string): {
   }
 }
 
+function hasStringVersion(
+  value: unknown,
+): value is Record<string, unknown> & { version: string } {
+  if (value === null || typeof value !== 'object') {
+    return false;
+  }
+  if (!('version' in value)) {
+    return false;
+  }
+  return typeof value.version === 'string';
+}
+
 /**
  * Read package-lock.json to get installed versions
  */
@@ -146,25 +164,22 @@ export function getInstalledVersions(cwd: string): Record<string, string> {
     const data = JSON.parse(content);
     const versions: Record<string, string> = {};
 
-    // package-lock.json v2/v3 format
-    if (data.packages) {
+    if (data.packages && typeof data.packages === 'object') {
       for (const [key, value] of Object.entries(data.packages)) {
         if (key === '') {
           continue;
         }
-        // Extract package name from path like \"node_modules/package-name\"
         const match = key.match(/node_modules\/(.+)$/);
-        if (match) {
+        if (match && hasStringVersion(value)) {
           const pkgName = match[1];
-          versions[pkgName] = (value as Record<string, unknown>)
-            .version as string;
+          versions[pkgName] = value.version;
         }
       }
-    }
-    // package-lock.json v1 format
-    else if (data.dependencies) {
+    } else if (data.dependencies && typeof data.dependencies === 'object') {
       for (const [name, value] of Object.entries(data.dependencies)) {
-        versions[name] = (value as Record<string, unknown>).version as string;
+        if (hasStringVersion(value)) {
+          versions[name] = value.version;
+        }
       }
     }
 
@@ -266,14 +281,16 @@ export class ProgressBar {
     const filled = Math.max(0, Math.min(barLen, Math.floor(ratio * barLen)));
     const bar = `${'█'.repeat(filled)}${'░'.repeat(barLen - filled)}`;
     const pct = this.total > 0 ? Math.floor(ratio * 100) : 100;
-    process.stderr.write(`\r[${bar}] ${pct}% (${this.current}/${this.total})`);
+    process.stderr.write?.(
+      `\r[${bar}] ${pct}% (${this.current}/${this.total})`,
+    );
   }
 
   finish() {
     if (!this.enabled) {
       return;
     }
-    process.stderr.write('\r');
+    process.stderr.write?.('\r');
     process.stderr.clearLine?.(0);
   }
 }
@@ -325,7 +342,13 @@ export async function run(): Promise<number> {
         return 0;
       }
 
-      outdated = outdatedRaw as OutdatedMap;
+      if (!isOutdatedMap(outdatedRaw)) {
+        const packageCount = await getPackageCount();
+        printUpToDateMessage(packageCount, args.quiet);
+        return 0;
+      }
+
+      outdated = outdatedRaw;
       const pkgs = Object.keys(outdated);
       const pb = new ProgressBar(pkgs.length, args.quiet);
 

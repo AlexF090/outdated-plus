@@ -105,7 +105,7 @@ describe('Output Functions', () => {
       expect(dataRow).toContain('2.0.0');
       expect(dataRow).toContain('major');
       expect(dataRow).toContain('1'); // Index
-      expect(dataRow).not.toContain('1.1.0'); // Wanted version should not be shown
+      expect(dataRow).not.toContain('1.1.0'); // Verifies Wanted version is excluded when showWanted=false
     });
 
     it('should print data rows with Wanted when showWanted=true', () => {

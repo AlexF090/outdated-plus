@@ -39,7 +39,7 @@
     "package-management"
   ],
   "author": "AlexF090",
-  "license": "SEE LICENSE IN LICENSE",
+  "license": "Proprietary License - Use Only",
   "type": "commonjs",
   "engines": {
     "node": ">=22.0.0",

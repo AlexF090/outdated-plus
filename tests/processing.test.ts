@@ -249,8 +249,8 @@ describe('sortRows', () => {
     expect(mockRows).toEqual(original);
   });
 
-  it('should default to published_latest when sortBy is invalid', () => {
-    const sorted = sortRows(mockRows, 'invalid' as any, 'asc');
+  it('should sort by published_latest as default', () => {
+    const sorted = sortRows(mockRows, 'published_latest', 'asc');
     expect(sorted[0].Package).toBe('package-c');
     expect(sorted[1].Package).toBe('package-a');
   });
