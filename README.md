@@ -67,7 +67,7 @@ Additionally shows the "Wanted" version and its publication date.
 | `--show-all` | Show all outdated packages (ignores `--older-than`) | false |
 | `--wanted` | Show Wanted version columns | false |
 | `--format FORMAT` | Output format: `plain` or `md` | `plain` |
-| `--sort-by FIELD` | Sort by: `name`, `age`, `age_latest`, `age_wanted`, `published_latest`, `published_wanted`, `current`, `wanted`, `latest` | `published_latest` |
+| `--sort-by FIELD` | Sort by: `name`, `age` (alias: `age_latest`), `age_latest`, `age_wanted`, `published` (alias: `published_latest`), `published_latest`, `published_wanted`, `current`, `wanted`, `latest` | `published_latest` |
 | `--order ORDER` | Sort order: `asc` or `desc` | `desc` |
 | `--iso` | Use ISO date format | false |
 | `--concurrency N` | Number of concurrent requests | 12 |
@@ -87,6 +87,8 @@ Skip packages via `--skip` flag or `.outdated-plus-skip` file:
 
 Syntax: `package-name` (skips all versions) or `package-name@version` (only that version).
 
+**Auto-Cleanup**: When `autoCleanup: true` (default), skip entries are automatically removed from `.outdated-plus-skip` if packages are no longer outdated or have been updated past the skip version.
+
 ## Examples
 
 ```bash
@@ -104,6 +106,15 @@ outdated-plus --sort-by age_latest
 
 # Show Wanted versions
 outdated-plus --wanted
+
+# Skip specific packages
+outdated-plus --skip react,typescript@5.0.0
+
+# Combine options: older packages, ISO dates, sorted by age
+outdated-plus --older-than 90 --iso --sort-by age_latest --order asc
+
+# High concurrency for faster checks
+outdated-plus --check-all --concurrency 20
 ```
 
 ## Data Sources
@@ -113,6 +124,11 @@ outdated-plus --wanted
 - **Publication dates**: Come directly from the official npm Registry API, no caches
 
 All data is fetched at runtime - no cached data.
+
+## Exit Codes
+
+- `0` - Success (packages checked, may or may not have outdated packages)
+- `1` - Error (network failure, parsing error, or other issues)
 
 ## Zero Dependencies
 
@@ -152,3 +168,13 @@ Proprietary - Use Only
 This software is provided for use only. Modification, forking, and integration into other projects is prohibited. See LICENSE file for details.
 
 For feature requests or bug reports, please open an issue on the repository.
+
+## Troubleshooting
+
+**No packages found**: Ensure you're in a directory with `package.json` and run `npm install` first.
+
+**Network errors**: Check your internet connection and npm registry access. The tool uses `https://registry.npmjs.org`.
+
+**Invalid skip file**: If `.outdated-plus-skip` has invalid JSON, it will be ignored. Fix the JSON syntax to re-enable skip functionality.
+
+**Concurrency limits**: `--concurrency` is automatically clamped between 1-100. Values outside this range are adjusted automatically.
