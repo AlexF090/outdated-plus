@@ -28,7 +28,9 @@
     "audit:signatures": "npm audit signatures",
     "security:check": "npm run audit && npm run audit:signatures",
     "ci": "npm ci",
-    "install:clean": "rm -rf node_modules package-lock.json && npm install"
+    "install:clean": "rm -rf node_modules package-lock.json && npm install",
+    "outdated-plus": "npm run build && node dist/index.js",
+    "outdated-plus:check-all": "npm run build && node dist/index.js --check-all"
   },
   "keywords": [
     "npm",
