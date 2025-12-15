@@ -24,6 +24,7 @@ export function parseArgs(argv: string[]): Args {
   const olderThan = Number(a.get('--older-than') ?? 0);
   const showAll = Boolean(a.get('--show-all'));
   const showWanted = Boolean(a.get('--wanted'));
+  const quiet = Boolean(a.get('--quiet'));
   const iso = Boolean(a.get('--iso'));
   // Parse skip packages from command line
   const skipPackages: string[] = [];
@@ -57,6 +58,7 @@ export function parseArgs(argv: string[]): Args {
     olderThan,
     showAll,
     showWanted,
+    quiet,
     iso,
     concurrency: Math.max(1, concurrency),
     sortBy: normalizedSort as Args['sortBy'],

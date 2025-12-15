@@ -34,6 +34,7 @@ export type Args = {
   olderThan: number;
   showAll: boolean;
   showWanted: boolean;
+  quiet: boolean;
   iso: boolean;
   concurrency: number;
   sortBy:

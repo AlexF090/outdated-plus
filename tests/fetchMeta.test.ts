@@ -1,35 +1,17 @@
-import { spawn } from 'node:child_process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('node:child_process');
+// Mock fetch globally
+const mockFetch = vi.fn();
+global.fetch = mockFetch;
 
-describe('fetchMeta', () => {
-  let mockSpawn: ReturnType<typeof vi.mocked<typeof spawn>>;
-
+describe('fetchPackageMeta', () => {
   beforeEach(() => {
-    mockSpawn = vi.mocked(spawn);
-  });
-
-  afterEach(() => {
     vi.clearAllMocks();
   });
 
-  function createMockChild(stdoutData: string) {
-    return {
-      stdout: {
-        on: vi.fn((event, callback) => {
-          if (event === 'data') {
-            callback(stdoutData);
-          }
-        }),
-      },
-      on: vi.fn((event, callback) => {
-        if (event === 'close') {
-          callback(0);
-        }
-      }),
-    };
-  }
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
 
   it('should fetch meta data with dist-tags structure', async () => {
     const mockData = {
@@ -40,10 +22,13 @@ describe('fetchMeta', () => {
       },
     };
 
-    mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    });
 
-    const { fetchMeta } = await import('../src/index.js');
-    const result = await fetchMeta('test-package');
+    const { fetchPackageMeta } = await import('../src/index.js');
+    const result = await fetchPackageMeta('test-package');
 
     expect(result).toEqual({
       latest: '1.0.0',
@@ -54,32 +39,14 @@ describe('fetchMeta', () => {
     });
   });
 
-  it('should fetch meta data with alternative dist-tags structure', async () => {
-    const mockData = {
-      'dist-tags.latest': '1.0.0',
-      time: {
-        '1.0.0': '2023-11-01T10:00:00Z',
-      },
-    };
-
-    mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
-
-    const { fetchMeta } = await import('../src/index.js');
-    const result = await fetchMeta('test-package');
-
-    expect(result).toEqual({
-      latest: '1.0.0',
-      timeMap: {
-        '1.0.0': '2023-11-01T10:00:00Z',
-      },
-    });
-  });
-
   it('should handle empty response', async () => {
-    mockSpawn.mockReturnValue(createMockChild('{}') as any);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({}),
+    });
 
-    const { fetchMeta } = await import('../src/index.js');
-    const result = await fetchMeta('test-package');
+    const { fetchPackageMeta } = await import('../src/index.js');
+    const result = await fetchPackageMeta('test-package');
 
     expect(result).toEqual({
       latest: '',
@@ -87,16 +54,30 @@ describe('fetchMeta', () => {
     });
   });
 
-  it('should handle malformed JSON', async () => {
-    mockSpawn.mockReturnValue(createMockChild('invalid json') as any);
-
-    const { fetchMeta } = await import('../src/index.js');
-    const result = await fetchMeta('test-package');
-
-    expect(result).toEqual({
-      latest: '',
-      timeMap: {},
+  it('should handle 404 errors', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 404,
     });
+
+    const { fetchPackageMeta } = await import('../src/index.js');
+
+    await expect(fetchPackageMeta('test-package')).rejects.toThrow(
+      'Package not found',
+    );
+  });
+
+  it('should handle network errors', async () => {
+    mockFetch.mockResolvedValueOnce({
+      ok: false,
+      status: 500,
+    });
+
+    const { fetchPackageMeta } = await import('../src/index.js');
+
+    await expect(fetchPackageMeta('test-package')).rejects.toThrow(
+      'Failed to fetch package metadata',
+    );
   });
 
   it('should handle missing time data', async () => {
@@ -104,10 +85,13 @@ describe('fetchMeta', () => {
       'dist-tags': { latest: '1.0.0' },
     };
 
-    mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    });
 
-    const { fetchMeta } = await import('../src/index.js');
-    const result = await fetchMeta('test-package');
+    const { fetchPackageMeta } = await import('../src/index.js');
+    const result = await fetchPackageMeta('test-package');
 
     expect(result).toEqual({
       latest: '1.0.0',
@@ -122,10 +106,13 @@ describe('fetchMeta', () => {
       },
     };
 
-    mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    });
 
-    const { fetchMeta } = await import('../src/index.js');
-    const result = await fetchMeta('test-package');
+    const { fetchPackageMeta } = await import('../src/index.js');
+    const result = await fetchPackageMeta('test-package');
 
     expect(result).toEqual({
       latest: '',
@@ -146,10 +133,13 @@ describe('fetchMeta', () => {
       },
     };
 
-    mockSpawn.mockReturnValue(createMockChild(JSON.stringify(mockData)) as any);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockData),
+    });
 
-    const { fetchMeta } = await import('../src/index.js');
-    const result = await fetchMeta('test-package');
+    const { fetchPackageMeta } = await import('../src/index.js');
+    const result = await fetchPackageMeta('test-package');
 
     expect(result).toEqual({
       latest: '1.0.0',
@@ -158,5 +148,13 @@ describe('fetchMeta', () => {
         '0.7.0': '2023-10-01T10:00:00Z',
       },
     });
+  });
+
+  it('should handle fetch exceptions', async () => {
+    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+    const { fetchPackageMeta } = await import('../src/index.js');
+
+    await expect(fetchPackageMeta('test-package')).rejects.toThrow();
   });
 });
