@@ -21,9 +21,15 @@ A CLI tool that extends `npm outdated` with publication dates and age informatio
 
 This tool uses the following data sources to provide package information:
 
-1. **npm outdated**: The list of outdated packages is retrieved using `npm outdated --json`, which provides the current, wanted, and latest versions for each package.
+1. **npm outdated** (default mode): The list of outdated packages is retrieved using `npm outdated --json`, which provides the current, wanted, and latest versions for each package. Publication dates are then fetched from the npm Registry API for these packages.
 
-2. **npm Registry API**: Publication dates and metadata are fetched directly from the npm Registry API at `https://registry.npmjs.org`. The tool makes HTTP requests to retrieve:
+2. **npm Registry API** (`--check-all` mode): When using the `--check-all` flag, the tool bypasses `npm outdated` and checks all packages directly via HTTP requests to `https://registry.npmjs.org`. This mode:
+   - Reads all dependencies from `package.json`
+   - Fetches metadata for each package from the npm Registry API
+   - Compares installed versions (from `package-lock.json`) with latest versions
+   - Shows all packages that have updates available, not just those detected by `npm outdated`
+
+3. **npm Registry API** (publication dates): Publication dates and metadata are fetched directly from the npm Registry API at `https://registry.npmjs.org`. The tool makes HTTP requests to retrieve:
    - Version information (latest version from dist-tags)
    - Publication timestamps for all versions (from the `time` field in the registry response)
 
@@ -82,53 +88,57 @@ outdated-plus --older-than 30 --format md --sort-by age_latest
 | `--show-all` | Show all outdated packages regardless of age | false |
 | `--wanted` | Show Wanted version columns (hidden by default) | false |
 | `--format FORMAT` | Output format: `plain` or `md` | `plain` |
-| `--sort-by FIELD` | Sort by: `name`, `age_latest`, `age_wanted`, `published_latest`, `published_wanted`, `current`, `wanted`, `latest` | `published_latest` |
+| `--sort-by FIELD` | Sort by: `name`, `age` (alias for `age_latest`), `published` (alias for `published_latest`), `age_latest`, `age_wanted`, `published_latest`, `published_wanted`, `current`, `wanted`, `latest` | `published_latest` |
 | `--order ORDER` | Sort order: `asc` or `desc` | `desc` |
 | `--iso` | Use ISO date format | false |
 | `--concurrency N` | Number of concurrent requests for metadata | 12 |
 | `--skip PACKAGES` | Comma-separated list of packages to skip | none |
+| `--quiet` | Suppress progress bar and non-essential output | false |
+| `--check-all` | Check ALL packages via HTTP (not just those found by `npm outdated`). Slower but shows everything | false |
 
 ## Output Format
 
 The tool displays the following information for each outdated package:
 
-### Default Output (6 columns)
+### Default Output (7 columns)
 - **Package**: Package name
 - **Current**: Currently installed version
 - **Latest**: Latest available version
 - **To Latest**: Bump type to reach latest version (major/minor/patch)
 - **Published**: When the latest version was published
 - **Age(d)**: Days since latest version was published
+- **#**: Row number
 
-### With `--wanted` Flag (10 columns)
+### With `--wanted` Flag (11 columns)
 Additionally shows:
 - **Wanted**: Version that satisfies your semver range
 - **To Wanted**: Bump type to reach wanted version
 - **Published (Wanted)**: When the wanted version was published
 - **Age(d) (Wanted)**: Days since wanted version was published
+- **#**: Row number
 
 ### Example Output
 
 #### Plain Text Format (default)
 ```
-Package     Current  Latest  To Latest  Published         Age(d)
-----------  -------  ------  ---------  ----------------  ------
-package-a   1.0.0    2.0.0   major      2023-11-15 10:00      16
-package-b   2.0.0    2.1.0   minor      2023-11-20 10:00      11
+Package     Current  Latest  To Latest  Published         Age(d)  #
+----------  -------  ------  ---------  ----------------  ------  -
+package-a   1.0.0    2.0.0   major      2023-11-15 10:00      16  1
+package-b   2.0.0    2.1.0   minor      2023-11-20 10:00      11  2
 ```
 
 #### With `--wanted` Flag
 ```
-Package     Current  Wanted  To Wanted  Latest  To Latest  Published (Wanted)  Age(d) (Wanted)  Published (Latest)  Age(d) (Latest)
-----------  -------  ------  ---------  ------  ---------  ------------------  ---------------  ------------------  ---------------
-package-a   1.0.0    1.1.0   minor      2.0.0   major      2023-11-01 10:00   30               2023-11-15 10:00    16
-package-b   2.0.0    2.0.0   same       2.1.0   minor      2023-10-01 10:00   61               2023-11-20 10:00    11
+Package     Current  Wanted  To Wanted  Latest  To Latest  Published (Wanted)  Age(d) (Wanted)  Published (Latest)  Age(d) (Latest)  #
+----------  -------  ------  ---------  ------  ---------  ------------------  ---------------  ------------------  ---------------  -
+package-a   1.0.0    1.1.0   minor      2.0.0   major      2023-11-01 10:00   30               2023-11-15 10:00    16               1
+package-b   2.0.0    2.0.0   same       2.1.0   minor      2023-10-01 10:00   61               2023-11-20 10:00    11               2
 ```
 
 
 ## Skip Dependencies
 
-You can skip specific packages or versions from the output using the `--skip` flag or a configuration file.
+You can skip specific packages or versions from the output using the `--skip` flag or a configuration file. Skipped packages are displayed in an info message at the top of the output (unless `--quiet` is used).
 
 ### Skip Syntax
 
@@ -198,6 +208,16 @@ outdated-plus --skip "react-refresh@7.0.0,typescript@5.0.0"
 ### Mix of package and version skips
 ```bash
 outdated-plus --skip "react,react-refresh@7.0.0,vue@3.2.0"
+```
+
+### Check all packages (not just outdated ones)
+```bash
+outdated-plus --check-all
+```
+
+### Quiet mode (suppress progress bar)
+```bash
+outdated-plus --quiet
 ```
 
 ## Use Cases
