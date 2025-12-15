@@ -2,8 +2,11 @@
 
 A CLI tool that extends `npm outdated` with publication dates and age information for packages. Shows when packages were published and how old they are, helping you make informed decisions about updates.
 
+**Core Feature: Zero Dependencies** - This tool has no runtime dependencies, ensuring security, independence, and reliability by using only Node.js built-in modules.
+
 ## Features
 
+- 🔒 **Zero Dependencies**: No runtime dependencies - uses only Node.js built-in modules. This core feature ensures independence from external tools and significantly reduces the attack surface, making the tool more secure and reliable.
 - 📅 **Publication Dates**: Shows when the wanted and latest versions were published
 - ⏰ **Age Information**: Displays how many days ago packages were published
 - 🔄 **Bump Type Analysis**: Shows whether updates are major, minor, or patch releases
@@ -13,6 +16,39 @@ A CLI tool that extends `npm outdated` with publication dates and age informatio
 - ⚡ **Concurrent Processing**: Configurable concurrency for faster metadata fetching
 - 🚫 **Skip Dependencies**: Skip specific packages or versions from the output using CLI flags or config files
 - 🧹 **Auto-Cleanup**: Automatically remove outdated skip entries from config files
+
+## Data Sources
+
+This tool uses the following data sources to provide package information:
+
+1. **npm outdated**: The list of outdated packages is retrieved using `npm outdated --json`, which provides the current, wanted, and latest versions for each package.
+
+2. **npm Registry API**: Publication dates and metadata are fetched directly from the npm Registry API at `https://registry.npmjs.org`. The tool makes HTTP requests to retrieve:
+   - Version information (latest version from dist-tags)
+   - Publication timestamps for all versions (from the `time` field in the registry response)
+
+All data is fetched in real-time during execution - no cached data is used.
+
+## Zero Dependencies
+
+This package has **zero runtime dependencies** - a core feature that ensures security and independence.
+
+### Why Zero Dependencies Matters
+
+- **Security**: No external dependencies means no dependency vulnerabilities. You're not exposed to supply chain attacks through third-party packages.
+- **Independence**: The tool doesn't rely on other packages that could break, be compromised, or become unavailable.
+- **Reliability**: Fewer moving parts mean fewer potential points of failure.
+- **Trust**: You can audit the entire codebase without worrying about hidden dependencies.
+
+### Technical Details
+
+The tool uses only Node.js built-in modules:
+- `node:child_process` - for spawning npm commands
+- `node:fs` - for reading package.json and config files
+- `node:path` - for path operations
+- Native `fetch` API - for HTTP requests to the npm registry (available in Node.js 22+)
+
+All dependencies listed in `package.json` are **development dependencies only** (TypeScript, ESLint, Prettier, Vitest, etc.) and are **not included** in the published package. When you install `outdated-plus`, you get only the compiled JavaScript code with zero external runtime dependencies.
 
 ## Installation
 
