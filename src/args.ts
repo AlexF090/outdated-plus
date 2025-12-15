@@ -25,6 +25,7 @@ export function parseArgs(argv: string[]): Args {
   const showAll = Boolean(a.get('--show-all'));
   const showWanted = Boolean(a.get('--wanted'));
   const quiet = Boolean(a.get('--quiet'));
+  const checkAll = Boolean(a.get('--check-all'));
   const iso = Boolean(a.get('--iso'));
   // Parse skip packages from command line
   const skipPackages: string[] = [];
@@ -59,6 +60,7 @@ export function parseArgs(argv: string[]): Args {
     showAll,
     showWanted,
     quiet,
+    checkAll,
     iso,
     concurrency: Math.max(1, concurrency),
     sortBy: normalizedSort as Args['sortBy'],

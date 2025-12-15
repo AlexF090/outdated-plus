@@ -35,6 +35,7 @@ export type Args = {
   showAll: boolean;
   showWanted: boolean;
   quiet: boolean;
+  checkAll: boolean;
   iso: boolean;
   concurrency: number;
   sortBy:

@@ -2,9 +2,12 @@
 /**
  * outdated-plus -- Node/TS CLI
  * Uses npm outdated for package detection + HTTP API for timestamps
+ * With --check-all flag: checks ALL packages via HTTP (slower, shows everything)
  */
 
 import { spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   addSkipEntriesToFile,
   cleanupAndSaveSkipFile,
@@ -13,7 +16,7 @@ import {
 import { formatError, NetworkError, RegistryError } from './lib/errors.js';
 import { printMarkdown, printPlain, printSkippedInfo } from './lib/output.js';
 import { buildRows, sortRows } from './lib/processing.js';
-import type { Meta, OutdatedMap } from './lib/types.js';
+import type { Meta, OutdatedEntry, OutdatedMap } from './lib/types.js';
 import { parseSkipEntry, shouldSkipPackage } from './lib/utils.js';
 
 const NPM_REGISTRY = 'https://registry.npmjs.org';
@@ -113,6 +116,136 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
   }
 }
 
+/**
+ * Read package.json to get all dependencies
+ */
+export function readPackageJson(cwd: string): {
+  dependencies: Record<string, string>;
+  devDependencies: Record<string, string>;
+} {
+  try {
+    const packageJsonPath = join(cwd, 'package.json');
+    const content = readFileSync(packageJsonPath, 'utf-8');
+    const data = JSON.parse(content);
+    return {
+      dependencies: data.dependencies || {},
+      devDependencies: data.devDependencies || {},
+    };
+  } catch {
+    return { dependencies: {}, devDependencies: {} };
+  }
+}
+
+/**
+ * Read package-lock.json to get installed versions
+ */
+export function getInstalledVersions(cwd: string): Record<string, string> {
+  try {
+    const lockPath = join(cwd, 'package-lock.json');
+    const content = readFileSync(lockPath, 'utf-8');
+    const data = JSON.parse(content);
+    const versions: Record<string, string> = {};
+
+    // package-lock.json v2/v3 format
+    if (data.packages) {
+      for (const [key, value] of Object.entries(data.packages)) {
+        if (key === '') {
+          continue;
+        }
+        // Extract package name from path like \"node_modules/package-name\"
+        const match = key.match(/node_modules\/(.+)$/);
+        if (match) {
+          const pkgName = match[1];
+          versions[pkgName] = (value as Record<string, unknown>)
+            .version as string;
+        }
+      }
+    }
+    // package-lock.json v1 format
+    else if (data.dependencies) {
+      for (const [name, value] of Object.entries(data.dependencies)) {
+        versions[name] = (value as Record<string, unknown>).version as string;
+      }
+    }
+
+    return versions;
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Build outdated map via HTTP (--check-all mode)
+ */
+export async function buildOutdatedMapViaHTTP(
+  quiet: boolean,
+  concurrency: number,
+): Promise<{ outdated: OutdatedMap; metas: Record<string, Meta> }> {
+  const cwd = process.cwd();
+  const { dependencies, devDependencies } = readPackageJson(cwd);
+  const installedVersions = getInstalledVersions(cwd);
+
+  const allDeps = { ...dependencies, ...devDependencies };
+  const pkgNames = Object.keys(allDeps);
+
+  if (pkgNames.length === 0) {
+    return { outdated: {}, metas: {} };
+  }
+
+  const pb = new ProgressBar(pkgNames.length, quiet);
+  const metas: Record<string, Meta> = {};
+  const outdated: OutdatedMap = {};
+
+  // Fetch metadata with concurrency limit
+  const limit = Math.max(1, concurrency);
+  let inFlight = 0;
+  let index = 0;
+
+  await new Promise<void>((resolve) => {
+    const tick = () => {
+      while (inFlight < limit && index < pkgNames.length) {
+        const pkgName = pkgNames[index];
+        index += 1;
+        inFlight += 1;
+
+        fetchPackageMeta(pkgName)
+          .then((meta) => {
+            metas[pkgName] = meta;
+
+            const current = installedVersions[pkgName] || '0.0.0';
+            const latest = meta.latest;
+
+            // Only add to outdated if current != latest
+            if (current !== latest && latest) {
+              const entry: OutdatedEntry = {
+                current,
+                wanted: latest, // In --check-all mode, wanted = latest
+                latest,
+              };
+              outdated[pkgName] = entry;
+            }
+          })
+          .catch(() => {
+            metas[pkgName] = { latest: '', timeMap: {} };
+          })
+          .finally(() => {
+            inFlight -= 1;
+            pb.update(1);
+            if (index >= pkgNames.length && inFlight === 0) {
+              resolve();
+            } else {
+              tick();
+            }
+          });
+      }
+    };
+    tick();
+  });
+
+  pb.finish();
+  return { outdated, metas };
+}
+
 export class ProgressBar {
   private total: number;
   private current = 0;
@@ -168,56 +301,69 @@ export async function run(): Promise<number> {
   const args = parseArgs(process.argv);
 
   try {
-    // 1) Get outdated packages from npm outdated
-    const outdatedRaw = await spawnJson('npm', ['outdated', '--json']);
-    if (
-      !outdatedRaw ||
-      typeof outdatedRaw !== 'object' ||
-      Object.keys(outdatedRaw).length === 0
-    ) {
-      const packageCount = await getPackageCount();
-      printUpToDateMessage(packageCount, args.quiet);
-      return 0;
+    let outdated: OutdatedMap;
+    let metas: Record<string, Meta>;
+
+    if (args.checkAll) {
+      // --check-all mode: Use HTTP to check all packages
+      const result = await buildOutdatedMapViaHTTP(
+        args.quiet,
+        args.concurrency,
+      );
+      outdated = result.outdated;
+      metas = result.metas;
+    } else {
+      // Standard mode: Use npm outdated
+      const outdatedRaw = await spawnJson('npm', ['outdated', '--json']);
+      if (
+        !outdatedRaw ||
+        typeof outdatedRaw !== 'object' ||
+        Object.keys(outdatedRaw).length === 0
+      ) {
+        const packageCount = await getPackageCount();
+        printUpToDateMessage(packageCount, args.quiet);
+        return 0;
+      }
+
+      outdated = outdatedRaw as OutdatedMap;
+      const pkgs = Object.keys(outdated);
+      const pb = new ProgressBar(pkgs.length, args.quiet);
+
+      // Fetch metadata with concurrency limit (HTTP API only for timestamps)
+      const limit = Math.max(1, args.concurrency);
+      metas = {};
+      let inFlight = 0;
+      let index = 0;
+
+      await new Promise<void>((resolve) => {
+        const tick = () => {
+          while (inFlight < limit && index < pkgs.length) {
+            const p = pkgs[index];
+            index += 1;
+            inFlight += 1;
+            fetchPackageMeta(p)
+              .then((m) => {
+                metas[p] = m;
+              })
+              .catch(() => {
+                metas[p] = { latest: '', timeMap: {} };
+              })
+              .finally(() => {
+                inFlight -= 1;
+                pb.update(1);
+                if (index >= pkgs.length && inFlight === 0) {
+                  resolve();
+                } else {
+                  tick();
+                }
+              });
+          }
+        };
+        tick();
+      });
+
+      pb.finish();
     }
-
-    const outdated = outdatedRaw as OutdatedMap;
-    const pkgs = Object.keys(outdated);
-    const pb = new ProgressBar(pkgs.length, args.quiet);
-
-    // 2) Fetch metadata with concurrency limit (HTTP API only for timestamps)
-    const limit = Math.max(1, args.concurrency);
-    const metas: Record<string, Meta> = {};
-    let inFlight = 0;
-    let index = 0;
-
-    await new Promise<void>((resolve) => {
-      const tick = () => {
-        while (inFlight < limit && index < pkgs.length) {
-          const p = pkgs[index];
-          index += 1;
-          inFlight += 1;
-          fetchPackageMeta(p)
-            .then((m) => {
-              metas[p] = m;
-            })
-            .catch(() => {
-              metas[p] = { latest: '', timeMap: {} };
-            })
-            .finally(() => {
-              inFlight -= 1;
-              pb.update(1);
-              if (index >= pkgs.length && inFlight === 0) {
-                resolve();
-              } else {
-                tick();
-              }
-            });
-        }
-      };
-      tick();
-    });
-
-    pb.finish();
 
     // 3) Build, sort, print
     let rows = buildRows(
