@@ -64,9 +64,8 @@ describe('Integration Tests', () => {
   });
 
   it('should format errors correctly', async () => {
-    const { NetworkError, RegistryError, formatError } = await import(
-      '../src/lib/errors.js'
-    );
+    const { NetworkError, RegistryError, formatError } =
+      await import('../src/lib/errors.js');
 
     const networkError = new NetworkError(
       'Connection failed',
