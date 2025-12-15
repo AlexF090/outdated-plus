@@ -70,11 +70,12 @@ export function printPlain(rows: Row[], showWanted = false) {
         'Age(d) (Wanted)',
         'Published (Latest)',
         'Age(d) (Latest)',
+        '#',
       ]
-    : ['Package', 'Current', 'Latest', 'To Latest', 'Published', 'Age(d)'];
+    : ['Package', 'Current', 'Latest', 'To Latest', 'Published', 'Age(d)', '#'];
 
   // Build row data with raw values for width calculation
-  const rawRows = rows.map((r) =>
+  const rawRows = rows.map((r, i) =>
     showWanted
       ? [
           r.Package,
@@ -87,6 +88,7 @@ export function printPlain(rows: Row[], showWanted = false) {
           r.AgeWanted,
           r.PublishedLatest,
           r.AgeLatest,
+          String(i + 1),
         ]
       : [
           r.Package,
@@ -95,11 +97,12 @@ export function printPlain(rows: Row[], showWanted = false) {
           r.ToLatest,
           r.PublishedLatest,
           r.AgeLatest,
+          String(i + 1),
         ],
   );
 
   // Build colored row data for display
-  const coloredRows = rows.map((r) =>
+  const coloredRows = rows.map((r, i) =>
     showWanted
       ? [
           colors.bold(r.Package),
@@ -112,6 +115,7 @@ export function printPlain(rows: Row[], showWanted = false) {
           formatAge(r.AgeWanted),
           r.PublishedLatest,
           formatAge(r.AgeLatest),
+          colors.gray(String(i + 1)),
         ]
       : [
           colors.bold(r.Package),
@@ -120,6 +124,7 @@ export function printPlain(rows: Row[], showWanted = false) {
           formatBumpType(r.ToLatest),
           r.PublishedLatest,
           formatAge(r.AgeLatest),
+          colors.gray(String(i + 1)),
         ],
   );
 
@@ -135,8 +140,15 @@ export function printPlain(rows: Row[], showWanted = false) {
       .map((v, i) => {
         const rawLen = useColor ? displayLength(v) : v.length;
         const padding = widths[i] - rawLen;
-        // Right-align last column (Age), left-align others
-        if (i === vals.length - 1) {
+        // Right-align last column (#) and Age columns
+        // Age columns are at indices:
+        // - showWanted=false: 5 (Age), 6 (#)
+        // - showWanted=true: 7 (AgeWanted), 9 (AgeLatest), 10 (#)
+        const isNumeric = showWanted
+          ? i === 7 || i === 9 || i === 10
+          : i === 5 || i === 6;
+
+        if (isNumeric) {
           return ' '.repeat(Math.max(0, padding)) + v;
         }
         return v + ' '.repeat(Math.max(0, padding));
@@ -175,12 +187,14 @@ export function printMarkdown(rows: Row[], showWanted = false) {
         'Age(d) (Wanted)',
         'Published (Latest)',
         'Age(d) (Latest)',
+        '#',
       ]
-    : ['Package', 'Current', 'Latest', 'To Latest', 'Published', 'Age(d)'];
+    : ['Package', 'Current', 'Latest', 'To Latest', 'Published', 'Age(d)', '#'];
 
   console.log(`| ${headers.join(' | ')} |`);
   console.log(`| ${headers.map(() => '---').join(' | ')} |`);
-  for (const r of rows) {
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
     const values = showWanted
       ? [
           r.Package,
@@ -193,6 +207,7 @@ export function printMarkdown(rows: Row[], showWanted = false) {
           r.AgeWanted,
           r.PublishedLatest,
           r.AgeLatest,
+          String(i + 1),
         ]
       : [
           r.Package,
@@ -201,6 +216,7 @@ export function printMarkdown(rows: Row[], showWanted = false) {
           r.ToLatest,
           r.PublishedLatest,
           r.AgeLatest,
+          String(i + 1),
         ];
     console.log(`| ${values.join(' | ')} |`);
   }

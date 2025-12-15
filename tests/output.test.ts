@@ -69,6 +69,7 @@ describe('Output Functions', () => {
       expect(calls[0][0]).toContain('To Latest');
       expect(calls[0][0]).toContain('Published');
       expect(calls[0][0]).toContain('Age(d)');
+      expect(calls[0][0]).toContain('#');
       expect(calls[0][0]).not.toContain('Wanted');
     });
 
@@ -82,6 +83,7 @@ describe('Output Functions', () => {
       expect(calls[0][0]).toContain('Current');
       expect(calls[0][0]).toContain('Wanted');
       expect(calls[0][0]).toContain('Latest');
+      expect(calls[0][0]).toContain('#');
     });
 
     it('should print separator line', () => {
@@ -102,6 +104,7 @@ describe('Output Functions', () => {
       expect(dataRow).toContain('1.0.0');
       expect(dataRow).toContain('2.0.0');
       expect(dataRow).toContain('major');
+      expect(dataRow).toContain('1'); // Index
       expect(dataRow).not.toContain('1.1.0'); // Wanted version should not be shown
     });
 
@@ -116,6 +119,7 @@ describe('Output Functions', () => {
       expect(dataRow).toContain('1.0.0');
       expect(dataRow).toContain('1.1.0'); // Wanted version should be shown
       expect(dataRow).toContain('2.0.0');
+      expect(dataRow).toContain('1'); // Index
     });
 
     it('should handle empty rows array', () => {
@@ -134,7 +138,7 @@ describe('Output Functions', () => {
 
       const calls = consoleSpy.mock.calls;
       expect(calls[0][0]).toBe(
-        '| Package | Current | Latest | To Latest | Published | Age(d) |',
+        '| Package | Current | Latest | To Latest | Published | Age(d) | # |',
       );
     });
 
@@ -143,23 +147,23 @@ describe('Output Functions', () => {
 
       const calls = consoleSpy.mock.calls;
       expect(calls[0][0]).toBe(
-        '| Package | Current | Wanted | To Wanted | Latest | To Latest | Published (Wanted) | Age(d) (Wanted) | Published (Latest) | Age(d) (Latest) |',
+        '| Package | Current | Wanted | To Wanted | Latest | To Latest | Published (Wanted) | Age(d) (Wanted) | Published (Latest) | Age(d) (Latest) | # |',
       );
     });
 
-    it('should print markdown table separator (default - 6 columns)', () => {
+    it('should print markdown table separator (default - 7 columns)', () => {
       printMarkdown(mockRows);
 
       const calls = consoleSpy.mock.calls;
-      expect(calls[1][0]).toBe('| --- | --- | --- | --- | --- | --- |');
+      expect(calls[1][0]).toBe('| --- | --- | --- | --- | --- | --- | --- |');
     });
 
-    it('should print markdown table separator (10 columns with Wanted)', () => {
+    it('should print markdown table separator (11 columns with Wanted)', () => {
       printMarkdown(mockRows, true);
 
       const calls = consoleSpy.mock.calls;
       expect(calls[1][0]).toBe(
-        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
+        '| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |',
       );
     });
 
@@ -171,7 +175,7 @@ describe('Output Functions', () => {
 
       const dataRow = calls[2][0];
       expect(dataRow).toBe(
-        '| package-a | 1.0.0 | 2.0.0 | major | 2023-11-15 10:00 | 16 |',
+        '| package-a | 1.0.0 | 2.0.0 | major | 2023-11-15 10:00 | 16 | 1 |',
       );
     });
 
@@ -185,6 +189,7 @@ describe('Output Functions', () => {
       expect(dataRow).toContain(
         '| package-a | 1.0.0 | 1.1.0 | minor | 2.0.0 | major |',
       );
+      expect(dataRow).toContain('| 1 |');
     });
 
     it('should handle empty rows array', () => {
