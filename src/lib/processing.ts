@@ -7,6 +7,20 @@ import {
   shouldSkipPackage,
 } from './utils.js';
 
+/**
+ * Builds an array of rows from outdated package data.
+ *
+ * Filters packages based on age cutoff and skip list, and enriches data with
+ * publication dates and age information.
+ *
+ * @param outdated - Map of outdated packages.
+ * @param metas - Map of package metadata containing time information.
+ * @param showAll - If true, ignores age cutoff filter.
+ * @param cutoffDays - Minimum age in days to include a package (0 = no filter).
+ * @param useIso - If true, uses ISO date format.
+ * @param skipPackages - Array of package skip entries.
+ * @returns Array of formatted row data ready for output.
+ */
 export function buildRows(
   outdated: OutdatedMap,
   metas: Record<string, Meta>,
@@ -77,6 +91,10 @@ export function buildRows(
   return rows;
 }
 
+/**
+ * Sorts rows based on the specified field and order.
+ * Returns a new array without modifying the original.
+ */
 export function sortRows(
   rows: Row[],
   sortBy: Args['sortBy'],

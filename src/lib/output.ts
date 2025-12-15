@@ -1,6 +1,9 @@
 import { colorAge, colorBumpType, colors, isColorEnabled } from './colors.js';
 import type { BumpType, Row } from './types.js';
 
+/**
+ * Prints information about skipped packages.
+ */
 export function printSkippedInfo(
   skippedPackages: string[],
   format: 'plain' | 'md',
@@ -56,6 +59,9 @@ function formatAge(ageStr: string): string {
   return colorAge(age);
 }
 
+/**
+ * Prints package information in plain text format with colored output.
+ */
 export function printPlain(rows: Row[], showWanted = false) {
   const headers = showWanted
     ? [
@@ -172,6 +178,9 @@ export function printPlain(rows: Row[], showWanted = false) {
   }
 }
 
+/**
+ * Prints package information in Markdown table format.
+ */
 export function printMarkdown(rows: Row[], showWanted = false) {
   // Markdown output without colors (for file output compatibility)
   const headers = showWanted

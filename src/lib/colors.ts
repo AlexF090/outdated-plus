@@ -51,7 +51,8 @@ export const colors = {
 };
 
 /**
- * Color a bump type indicator
+ * Colors a bump type indicator for terminal display.
+ * Color mapping: major=red, minor=yellow, patch=green, prerelease=cyan, same=gray.
  */
 export function colorBumpType(
   bump: 'major' | 'minor' | 'patch' | 'prerelease' | 'same' | 'unknown',
@@ -73,7 +74,8 @@ export function colorBumpType(
 }
 
 /**
- * Color an age value based on how old it is
+ * Colors an age value based on how old it is.
+ * Color thresholds: >365 days (red), >90 days (yellow), <=90 days (green).
  */
 export function colorAge(age: number | null): string {
   if (age === null) {
@@ -90,7 +92,8 @@ export function colorAge(age: number | null): string {
 }
 
 /**
- * Check if colors are currently enabled
+ * Checks if colors are currently enabled.
+ * Respects NO_COLOR, FORCE_COLOR environment variables and TTY detection.
  */
 export function isColorEnabled(): boolean {
   return colorsEnabled;

@@ -29,7 +29,11 @@ import {
 const NPM_REGISTRY = 'https://registry.npmjs.org';
 
 /**
- * Spawn npm command and return JSON output
+ * Spawns a command and returns its JSON output.
+ *
+ * @param cmd - The command to execute (e.g., 'npm').
+ * @param args - Array of command-line arguments.
+ * @returns Promise that resolves to the parsed JSON output, or an empty object if parsing fails.
  */
 export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
   return new Promise((resolve) => {
@@ -49,7 +53,11 @@ export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
 }
 
 /**
- * Spawn npm command and return text output
+ * Spawns a command and returns its text output.
+ *
+ * @param cmd - The command to execute (e.g., 'npm').
+ * @param args - Array of command-line arguments.
+ * @returns Promise that resolves to the trimmed text output.
  */
 export function spawnText(cmd: string, args: string[]): Promise<string> {
   return new Promise((resolve) => {
@@ -65,7 +73,12 @@ export function spawnText(cmd: string, args: string[]): Promise<string> {
 }
 
 /**
- * Fetch package metadata from npm registry via HTTP
+ * Fetches package metadata from the npm registry via HTTP.
+ *
+ * @param pkg - The package name to fetch metadata for.
+ * @returns Promise that resolves to package metadata containing latest version and time map.
+ * @throws {RegistryError} If the package is not found (404) or the response format is invalid.
+ * @throws {NetworkError} If the HTTP request fails, times out, or returns a non-OK status.
  */
 export async function fetchPackageMeta(pkg: string): Promise<Meta> {
   const url = `${NPM_REGISTRY}/${encodeURIComponent(pkg)}`;
@@ -123,7 +136,10 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
 }
 
 /**
- * Read package.json to get all dependencies
+ * Reads package.json and extracts all dependencies.
+ *
+ * @param cwd - The current working directory where package.json should be located.
+ * @returns Object containing dependencies and devDependencies. Returns empty objects if file cannot be read or parsed.
  */
 export function readPackageJson(cwd: string): {
   dependencies: Record<string, string>;
@@ -155,7 +171,10 @@ function hasStringVersion(
 }
 
 /**
- * Read package-lock.json to get installed versions
+ * Reads package-lock.json and extracts installed package versions.
+ *
+ * @param cwd - The current working directory where package-lock.json should be located.
+ * @returns Record mapping package names to their installed versions. Returns empty object if file cannot be read or parsed.
  */
 export function getInstalledVersions(cwd: string): Record<string, string> {
   try {
@@ -190,7 +209,15 @@ export function getInstalledVersions(cwd: string): Record<string, string> {
 }
 
 /**
- * Build outdated map via HTTP (--check-all mode)
+ * Builds an outdated package map by checking all packages via HTTP (--check-all mode).
+ *
+ * This function reads all dependencies from package.json, fetches metadata for each package
+ * from the npm registry, and compares installed versions with latest versions to determine
+ * which packages are outdated.
+ *
+ * @param quiet - If true, suppresses progress bar output.
+ * @param concurrency - Maximum number of concurrent HTTP requests (1-100).
+ * @returns Promise that resolves to an object containing the outdated map and metadata for all packages.
  */
 export async function buildOutdatedMapViaHTTP(
   quiet: boolean,
@@ -261,16 +288,28 @@ export async function buildOutdatedMapViaHTTP(
   return { outdated, metas };
 }
 
+/**
+ * A simple progress bar for displaying operation progress in the terminal.
+ */
 export class ProgressBar {
   private total: number;
   private current = 0;
   private enabled: boolean;
 
+  /**
+   * Creates a new ProgressBar instance.
+   *
+   * @param total - The total number of items to process.
+   * @param quiet - If true, the progress bar will be disabled.
+   */
   constructor(total: number, quiet = false) {
     this.total = total;
     this.enabled = !quiet && process.stderr.isTTY === true;
   }
 
+  /**
+   * Updates the progress bar by the specified step amount.
+   */
   update(step = 1) {
     if (!this.enabled) {
       return;
@@ -286,6 +325,9 @@ export class ProgressBar {
     );
   }
 
+  /**
+   * Finishes the progress bar.
+   */
   finish() {
     if (!this.enabled) {
       return;
@@ -295,6 +337,9 @@ export class ProgressBar {
   }
 }
 
+/**
+ * Gets the total count of installed packages.
+ */
 export async function getPackageCount(): Promise<number> {
   try {
     const output = await spawnText('npm', ['list', '--depth=0', '--json']);
@@ -305,6 +350,9 @@ export async function getPackageCount(): Promise<number> {
   }
 }
 
+/**
+ * Prints a message indicating that all packages are up to date.
+ */
 export function printUpToDateMessage(
   packageCount: number,
   quiet: boolean,
@@ -314,6 +362,18 @@ export function printUpToDateMessage(
   }
 }
 
+/**
+ * Main entry point for the outdated-plus CLI tool.
+ *
+ * This function orchestrates the entire workflow:
+ * 1. Parses command-line arguments
+ * 2. Detects outdated packages (via npm outdated or HTTP)
+ * 3. Fetches package metadata from npm registry
+ * 4. Builds, filters, and sorts the results
+ * 5. Outputs the results in the requested format
+ *
+ * @returns Promise that resolves to exit code (0 for success, 1 for error).
+ */
 export async function run(): Promise<number> {
   const args = parseArgs(process.argv);
 

@@ -26,6 +26,16 @@ function isFormat(value: unknown): value is Args['format'] {
   return value === 'plain' || value === 'md';
 }
 
+/**
+ * Parses command-line arguments into a structured Args object.
+ *
+ * Supports all CLI options including --check-all, --older-than, --format, --sort-by,
+ * --order, --wanted, --quiet, --iso, --concurrency, and --skip.
+ * Also loads skip packages from .outdated-plus-skip file if present.
+ *
+ * @param argv - Command-line arguments array (typically process.argv).
+ * @returns Parsed arguments object with all options and defaults applied.
+ */
 export function parseArgs(argv: string[]): Args {
   const a = new Map<string, string | true>();
   for (let i = 2; i < argv.length; i += 1) {
@@ -103,6 +113,15 @@ export function parseArgs(argv: string[]): Args {
   };
 }
 
+/**
+ * Adds command-line skip entries to the skip configuration file.
+ *
+ * Only adds entries that don't already exist in the file.
+ *
+ * @param skipConfig - Current skip configuration, or null if file doesn't exist.
+ * @param skipFilePath - Path to the skip file, or null to use default.
+ * @param commandLineSkips - Array of skip entries from command line.
+ */
 export function addSkipEntriesToFile(
   skipConfig: SkipFileConfig | null,
   skipFilePath: string | null,
@@ -139,6 +158,19 @@ export function addSkipEntriesToFile(
   }
 }
 
+/**
+ * Cleans up skip file entries that are no longer relevant.
+ *
+ * Removes entries where:
+ * - The package is no longer outdated, or
+ * - The version-specific skip entry is no longer needed (package has been updated).
+ *
+ * Only performs cleanup if autoCleanup is enabled in the config.
+ *
+ * @param skipConfig - Current skip configuration, or null if file doesn't exist.
+ * @param skipFilePath - Path to the skip file, or null to use default.
+ * @param outdated - Map of currently outdated packages.
+ */
 export function cleanupAndSaveSkipFile(
   skipConfig: SkipFileConfig | null,
   skipFilePath: string | null,

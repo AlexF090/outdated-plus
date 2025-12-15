@@ -10,7 +10,10 @@ export function parseIsoZ(s?: string): number | null {
 }
 
 /**
- * Type guard to validate npm Registry Response structure
+ * Type guard to validate npm Registry Response structure.
+ *
+ * @param data - The data to validate.
+ * @returns True if the data matches the expected npm registry response format.
  */
 export function isValidNpmRegistryResponse(
   data: unknown,
@@ -36,6 +39,12 @@ export function isValidNpmRegistryResponse(
   return true;
 }
 
+/**
+ * Type guard to validate that data is an OutdatedMap.
+ *
+ * @param data - The data to validate.
+ * @returns True if the data matches the OutdatedMap structure.
+ */
 export function isOutdatedMap(data: unknown): data is OutdatedMap {
   if (!data || typeof data !== 'object') {
     return false;
@@ -61,7 +70,10 @@ export function isOutdatedMap(data: unknown): data is OutdatedMap {
 }
 
 /**
- * Safely extract latest version from npm Registry Response
+ * Safely extracts the latest version from an npm Registry Response.
+ *
+ * @param data - The npm registry response data.
+ * @returns The latest version string, or empty string if not found.
  */
 export function extractLatestVersion(data: NpmRegistryResponse): string {
   const distTags = data['dist-tags'];
@@ -72,7 +84,12 @@ export function extractLatestVersion(data: NpmRegistryResponse): string {
 }
 
 /**
- * Safely extract time map from npm Registry Response
+ * Safely extracts the time map from an npm Registry Response.
+ *
+ * The time map contains publication dates for all package versions.
+ *
+ * @param data - The npm registry response data.
+ * @returns Record mapping version strings to ISO date strings.
  */
 export function extractTimeMap(
   data: NpmRegistryResponse,
@@ -93,6 +110,9 @@ export function extractTimeMap(
   return timeMap;
 }
 
+/**
+ * Calculates the number of days ago from a timestamp.
+ */
 export function daysAgo(ms: number | null): number | null {
   if (ms === null) {
     return null;
@@ -101,6 +121,9 @@ export function daysAgo(ms: number | null): number | null {
   return Math.max(0, Math.floor(delta / 86400000));
 }
 
+/**
+ * Formats a timestamp into a human-readable date string.
+ */
 export function fmtTime(ms: number | null, iso: boolean): string {
   if (ms === null) {
     return '-';
@@ -199,6 +222,13 @@ function comparePrereleaseIdentifiers(
   return 0;
 }
 
+/**
+ * Compares two semantic versions and determines if the first is higher than the second.
+ *
+ * @param version1 - First version string to compare.
+ * @param version2 - Second version string to compare.
+ * @returns True if version1 is higher than version2, false otherwise.
+ */
 export function isVersionHigher(version1: string, version2: string): boolean {
   const v1 = parseSemver(version1);
   const v2 = parseSemver(version2);
@@ -222,6 +252,13 @@ export function isVersionHigher(version1: string, version2: string): boolean {
   return prereleaseComparison > 0;
 }
 
+/**
+ * Determines the type of version bump between two versions.
+ *
+ * @param fromV - The source version string.
+ * @param toV - The target version string.
+ * @returns The bump type: 'major', 'minor', 'patch', 'prerelease', 'same', or 'unknown'.
+ */
 export function bumpType(fromV: string, toV: string): BumpType {
   const a = parseSemver(fromV);
   const b = parseSemver(toV);
@@ -245,6 +282,17 @@ export function bumpType(fromV: string, toV: string): BumpType {
   return 'unknown';
 }
 
+/**
+ * Parses a skip entry string into package name and optional version.
+ *
+ * Supports both scoped and non-scoped packages. Examples:
+ * - "package-name" -> { package: "package-name" }
+ * - "package-name@1.0.0" -> { package: "package-name", version: "1.0.0" }
+ * - "@scope/package@1.0.0" -> { package: "@scope/package", version: "1.0.0" }
+ *
+ * @param entry - The skip entry string to parse.
+ * @returns Object with package name and optional version.
+ */
 export function parseSkipEntry(entry: string): {
   package: string;
   version?: string;
@@ -268,6 +316,21 @@ export function parseSkipEntry(entry: string): {
   return { package: packageName, version };
 }
 
+/**
+ * Determines if a package should be skipped based on skip entries.
+ *
+ * A package is skipped if:
+ * - It matches a skip entry without a version (skip all versions), or
+ * - It matches a skip entry with a version that matches the latest version
+ *   and the wanted version hasn't changed from current.
+ *
+ * @param packageName - The package name to check.
+ * @param currentVersion - The currently installed version.
+ * @param wantedVersion - The wanted version according to package.json constraints.
+ * @param latestVersion - The latest available version.
+ * @param skipEntries - Array of skip entry strings.
+ * @returns True if the package should be skipped, false otherwise.
+ */
 export function shouldSkipPackage(
   packageName: string,
   currentVersion: string,
