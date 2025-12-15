@@ -227,7 +227,7 @@ describe('isVersionHigher', () => {
     expect(isVersionHigher('1.0.0-rc.1', '1.0.0-beta.11')).toBe(true);
   });
 
-  it('should return false when first version is lower', () => {
+  it('should return true when first version is higher', () => {
     expect(isVersionHigher('1.1.0', '1.0.0')).toBe(true);
     expect(isVersionHigher('1.0.1', '1.0.0')).toBe(true);
   });
