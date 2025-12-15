@@ -15,9 +15,9 @@ describe('Integration Tests', () => {
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
-    vi.restoreAllMocks();
     consoleSpy.mockRestore();
+    vi.restoreAllMocks();
+    vi.clearAllMocks();
   });
 
   it('should handle fetchPackageMeta with valid data', async () => {
