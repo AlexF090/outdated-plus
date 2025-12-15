@@ -16,6 +16,7 @@ const GRAY = '\x1b[90m';
 /**
  * Check if colors should be used
  * Respects NO_COLOR env variable and TTY detection
+ * Evaluated dynamically on each call to support runtime changes
  */
 function supportsColor(): boolean {
   if (process.env.NO_COLOR) {
@@ -27,10 +28,8 @@ function supportsColor(): boolean {
   return process.stdout.isTTY === true;
 }
 
-const colorsEnabled = supportsColor();
-
 function wrap(code: string, text: string): string {
-  if (!colorsEnabled) {
+  if (!supportsColor()) {
     return text;
   }
   return `${code}${text}${RESET}`;
@@ -94,7 +93,8 @@ export function colorAge(age: number | null): string {
 /**
  * Checks if colors are currently enabled.
  * Respects NO_COLOR, FORCE_COLOR environment variables and TTY detection.
+ * Evaluated dynamically on each call to reflect current environment state.
  */
 export function isColorEnabled(): boolean {
-  return colorsEnabled;
+  return supportsColor();
 }

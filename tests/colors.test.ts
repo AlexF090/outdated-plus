@@ -9,7 +9,6 @@ import {
 describe('colors utility', () => {
   describe('with colors enabled', () => {
     beforeEach(() => {
-      // Mock TTY and remove NO_COLOR
       delete process.env.NO_COLOR;
       process.env.FORCE_COLOR = '1';
     });
@@ -20,24 +19,51 @@ describe('colors utility', () => {
     });
 
     it('should wrap text with red color', () => {
-      // Since we can't easily reset the module, we test the structure
       const result = colors.red('test');
       expect(result).toContain('test');
+      expect(result).toContain('\x1b[31m');
     });
 
     it('should wrap text with green color', () => {
       const result = colors.green('test');
       expect(result).toContain('test');
+      expect(result).toContain('\x1b[32m');
     });
 
     it('should wrap text with yellow color', () => {
       const result = colors.yellow('test');
       expect(result).toContain('test');
+      expect(result).toContain('\x1b[33m');
     });
 
     it('should wrap text with bold', () => {
       const result = colors.bold('test');
       expect(result).toContain('test');
+      expect(result).toContain('\x1b[1m');
+    });
+  });
+
+  describe('with colors disabled', () => {
+    beforeEach(() => {
+      process.env.NO_COLOR = '1';
+      delete process.env.FORCE_COLOR;
+    });
+
+    afterEach(() => {
+      delete process.env.NO_COLOR;
+      vi.unstubAllEnvs();
+    });
+
+    it('should return plain text without ANSI codes', () => {
+      const result = colors.red('test');
+      expect(result).toBe('test');
+      expect(result).not.toContain('\x1b[31m');
+    });
+
+    it('should return plain text for bold', () => {
+      const result = colors.bold('test');
+      expect(result).toBe('test');
+      expect(result).not.toContain('\x1b[1m');
     });
   });
 });
@@ -101,7 +127,27 @@ describe('colorAge', () => {
 });
 
 describe('isColorEnabled', () => {
-  it('should return boolean', () => {
-    expect(typeof isColorEnabled()).toBe('boolean');
+  afterEach(() => {
+    delete process.env.NO_COLOR;
+    delete process.env.FORCE_COLOR;
+    vi.unstubAllEnvs();
+  });
+
+  it('should return true when FORCE_COLOR is set', () => {
+    process.env.FORCE_COLOR = '1';
+    delete process.env.NO_COLOR;
+    expect(isColorEnabled()).toBe(true);
+  });
+
+  it('should return false when NO_COLOR is set', () => {
+    process.env.NO_COLOR = '1';
+    delete process.env.FORCE_COLOR;
+    expect(isColorEnabled()).toBe(false);
+  });
+
+  it('should prioritize NO_COLOR over FORCE_COLOR', () => {
+    process.env.NO_COLOR = '1';
+    process.env.FORCE_COLOR = '1';
+    expect(isColorEnabled()).toBe(false);
   });
 });
