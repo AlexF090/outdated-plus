@@ -19,8 +19,7 @@ eslint.config.js
 .vscode/
 .idea/
 
-# Documentation (only README.md and LICENSE are included via package.json files)
-CHANGELOG.md
+# Documentation (only README.md, CHANGELOG.md, and LICENSE are included via package.json files)
 SECURITY.md
 
 # Build artifacts
