@@ -24,6 +24,17 @@ outdated-plus --check-all
 
 Bypasses `npm outdated` and checks **all** packages directly via the npm Registry API. Slower, but also shows packages that `npm outdated` might miss.
 
+## Requirements
+
+- **Node.js**: >= 18.0.0
+- **npm**: >= 9.0.0
+
+This tool requires access to:
+
+- Filesystem (reads `package.json`, `package-lock.json`, `.outdated-plus-skip`)
+- Network (fetches package metadata from npm Registry API)
+- npm CLI (for `npm outdated` in standard mode)
+
 ## Installation
 
 ```bash
@@ -120,6 +131,18 @@ All data is fetched at runtime - no cached data.
 npm install
 npm run build
 npm run start
+```
+
+### Debugging
+
+Source maps (`.map` files) are excluded from the npm package for production use. For debugging purposes, build the project locally:
+
+```bash
+git clone <repository-url>
+cd outdated-plus
+npm install
+npm run build
+# Source maps are now available in dist/ for debugging
 ```
 
 ## License
