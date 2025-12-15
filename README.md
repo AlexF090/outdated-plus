@@ -26,7 +26,7 @@ Bypasses `npm outdated` and checks **all** packages directly via the npm Registr
 
 ## Requirements
 
-- **Node.js**: >= 18.0.0
+- **Node.js**: >= 20.0.0 (>= 20.19.0 recommended for development due to vite requirements)
 - **npm**: >= 9.0.0
 
 This tool requires access to:

@@ -29,6 +29,8 @@
     "outdated-plus": "npm run build && node dist/index.js",
     "outdated-plus:check-all": "npm run build && node dist/index.js --check-all",
     "ci": "npm ci",
+    "ci:local": "npm run lint && npm run format:check && npm run test && npm run build && npm run security:check",
+    "ci:local:all": "zsh scripts/ci-local-all.sh",
     "install:clean": "rm -rf node_modules package-lock.json && npm install",
     "postinstall": "chmod +x dist/index.js || true",
     "prepublishOnly": "npm run lint && npm run format:check && npm run test && npm run build"
@@ -45,7 +47,7 @@
   "license": "SEE LICENSE IN LICENSE",
   "type": "commonjs",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.0.0",
     "npm": ">=9.0.0"
   },
   "repository": {

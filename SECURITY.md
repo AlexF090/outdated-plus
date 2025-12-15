@@ -9,8 +9,8 @@
 
 ## Requirements
 
-- Node.js 22+ (LTS)
-- npm 11+
+- Node.js >=18.0.0
+- npm >=9.0.0
 
 ## Reporting a Vulnerability
 
