@@ -16,21 +16,14 @@ updates:
     commit-message:
       prefix: 'deps'
       include: 'scope'
-    # Versioning strategy: auto (default), increase, increase-if-necessary, widen, lockfile-only
-    # 'auto' ist für npm der beste Ansatz
     versioning-strategy: auto
-    # Rebase strategy: auto (default), disabled
-    # 'auto' enabled automatisches Rebasing bei Konflikten
     rebase-strategy: auto
-    # Allow all dependency types (direct and indirect)
     allow:
       - dependency-type: 'direct'
       - dependency-type: 'indirect'
     labels:
       - 'dependencies'
       - 'automated'
-    # Ignore major version updates für normale Version-Updates
-    # WICHTIG: Security Updates werden NICHT blockiert, auch nicht bei Major-Versionen
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
@@ -60,7 +53,6 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
-      # Gruppiere auch Security Updates
       security-updates-dev:
         applies-to: security-updates
         patterns:
