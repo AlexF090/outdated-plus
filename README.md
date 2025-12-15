@@ -163,7 +163,7 @@ npm run build
 
 ## License
 
-Proprietary - Use Only
+Proprietary License
 
 This software is provided for use only. Modification, forking, and integration into other projects is prohibited. See LICENSE file for details.
 
