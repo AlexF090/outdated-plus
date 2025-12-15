@@ -27,6 +27,7 @@ import {
 } from './lib/utils.js';
 
 const NPM_REGISTRY = 'https://registry.npmjs.org';
+const HTTP_REQUEST_TIMEOUT_MS = 10000;
 
 /**
  * Spawns a command and returns its JSON output.
@@ -84,7 +85,10 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
   const url = `${NPM_REGISTRY}/${encodeURIComponent(pkg)}`;
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
+  const timeoutId = setTimeout(
+    () => controller.abort(),
+    HTTP_REQUEST_TIMEOUT_MS,
+  );
 
   try {
     const response = await fetch(url, {
