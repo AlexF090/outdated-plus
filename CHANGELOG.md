@@ -5,9 +5,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2024-XX-XX
+## [1.3.0] - 2024-12-15
 
 ### Added
+
 - Initial release with core functionality
 - Support for checking outdated packages via `npm outdated`
 - `--check-all` mode for checking all packages via HTTP
@@ -25,6 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Concurrency control (`--concurrency`)
 
 ### Security
+
 - Zero runtime dependencies
 - Only Node.js built-in modules used
 - Security audit scripts included
@@ -32,5 +34,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Future features and improvements
 
+- Future features and improvements
