@@ -12,13 +12,11 @@
     "LICENSE"
   ],
   "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -w",
+    "start": "node dist/index.js",
     "test": "npm run build && vitest run",
     "test:watch": "npm run build && vitest",
-    "build": "tsc -p tsconfig.json",
-    "postinstall": "chmod +x dist/index.js || true",
-    "start": "node dist/index.js",
-    "dev": "tsc -w",
-    "prepublishOnly": "npm run lint && npm run format:check && npm run test && npm run build",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "format:check": "prettier --check src tests",
@@ -27,10 +25,12 @@
     "audit:fix": "npm audit fix",
     "audit:signatures": "npm audit signatures",
     "security:check": "npm run audit && npm run audit:signatures",
+    "outdated-plus": "npm run build && node dist/index.js",
+    "outdated-plus:check-all": "npm run build && node dist/index.js --check-all",
     "ci": "npm ci",
     "install:clean": "rm -rf node_modules package-lock.json && npm install",
-    "outdated-plus": "npm run build && node dist/index.js",
-    "outdated-plus:check-all": "npm run build && node dist/index.js --check-all"
+    "postinstall": "chmod +x dist/index.js || true",
+    "prepublishOnly": "npm run lint && npm run format:check && npm run test && npm run build"
   },
   "keywords": [
     "npm",
