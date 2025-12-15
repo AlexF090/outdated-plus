@@ -57,8 +57,23 @@ describe('Output Functions', () => {
   });
 
   describe('printPlain', () => {
-    it('should print formatted table with headers', () => {
+    it('should print formatted table with headers (default - no Wanted)', () => {
       printPlain(mockRows);
+
+      expect(consoleSpy).toHaveBeenCalled();
+      const calls = consoleSpy.mock.calls;
+
+      expect(calls[0][0]).toContain('Package');
+      expect(calls[0][0]).toContain('Current');
+      expect(calls[0][0]).toContain('Latest');
+      expect(calls[0][0]).toContain('To Latest');
+      expect(calls[0][0]).toContain('Published');
+      expect(calls[0][0]).toContain('Age(d)');
+      expect(calls[0][0]).not.toContain('Wanted');
+    });
+
+    it('should print formatted table with Wanted when showWanted=true', () => {
+      printPlain(mockRows, true);
 
       expect(consoleSpy).toHaveBeenCalled();
       const calls = consoleSpy.mock.calls;
@@ -76,7 +91,7 @@ describe('Output Functions', () => {
       expect(calls[1][0]).toMatch(/^-+\s+-+\s+-+/);
     });
 
-    it('should print data rows with proper alignment', () => {
+    it('should print data rows with proper alignment (default - no Wanted)', () => {
       printPlain(mockRows);
 
       const calls = consoleSpy.mock.calls;
@@ -85,7 +100,22 @@ describe('Output Functions', () => {
       const dataRow = calls[2][0];
       expect(dataRow).toContain('package-a');
       expect(dataRow).toContain('1.0.0');
-      expect(dataRow).toContain('1.1.0');
+      expect(dataRow).toContain('2.0.0');
+      expect(dataRow).toContain('major');
+      expect(dataRow).not.toContain('1.1.0'); // Wanted version should not be shown
+    });
+
+    it('should print data rows with Wanted when showWanted=true', () => {
+      printPlain(mockRows, true);
+
+      const calls = consoleSpy.mock.calls;
+      expect(calls).toHaveLength(4);
+
+      const dataRow = calls[2][0];
+      expect(dataRow).toContain('package-a');
+      expect(dataRow).toContain('1.0.0');
+      expect(dataRow).toContain('1.1.0'); // Wanted version should be shown
+      expect(dataRow).toContain('2.0.0');
     });
 
     it('should handle empty rows array', () => {
@@ -99,8 +129,17 @@ describe('Output Functions', () => {
   });
 
   describe('printMarkdown', () => {
-    it('should print markdown table headers', () => {
+    it('should print markdown table headers (default - no Wanted)', () => {
       printMarkdown(mockRows);
+
+      const calls = consoleSpy.mock.calls;
+      expect(calls[0][0]).toBe(
+        '| Package | Current | Latest | To Latest | Published | Age(d) |',
+      );
+    });
+
+    it('should print markdown table headers with Wanted when showWanted=true', () => {
+      printMarkdown(mockRows, true);
 
       const calls = consoleSpy.mock.calls;
       expect(calls[0][0]).toBe(
@@ -108,8 +147,15 @@ describe('Output Functions', () => {
       );
     });
 
-    it('should print markdown table separator', () => {
+    it('should print markdown table separator (default - 6 columns)', () => {
       printMarkdown(mockRows);
+
+      const calls = consoleSpy.mock.calls;
+      expect(calls[1][0]).toBe('| --- | --- | --- | --- | --- | --- |');
+    });
+
+    it('should print markdown table separator (10 columns with Wanted)', () => {
+      printMarkdown(mockRows, true);
 
       const calls = consoleSpy.mock.calls;
       expect(calls[1][0]).toBe(
@@ -117,8 +163,20 @@ describe('Output Functions', () => {
       );
     });
 
-    it('should print markdown data rows', () => {
+    it('should print markdown data rows (default - no Wanted)', () => {
       printMarkdown(mockRows);
+
+      const calls = consoleSpy.mock.calls;
+      expect(calls).toHaveLength(4);
+
+      const dataRow = calls[2][0];
+      expect(dataRow).toBe(
+        '| package-a | 1.0.0 | 2.0.0 | major | 2023-11-15 10:00 | 16 |',
+      );
+    });
+
+    it('should print markdown data rows with Wanted when showWanted=true', () => {
+      printMarkdown(mockRows, true);
 
       const calls = consoleSpy.mock.calls;
       expect(calls).toHaveLength(4);
@@ -213,6 +271,21 @@ describe('Output Functions', () => {
 
       const mdSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
       printMarkdown(mockRows);
+      const mdCalls = mdSpy.mock.calls.length;
+      mdSpy.mockRestore();
+
+      expect(plainCalls).toBe(4);
+      expect(mdCalls).toBe(4);
+    });
+
+    it('should have same number of columns with showWanted across all formats', () => {
+      const plainSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      printPlain(mockRows, true);
+      const plainCalls = plainSpy.mock.calls.length;
+      plainSpy.mockRestore();
+
+      const mdSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+      printMarkdown(mockRows, true);
       const mdCalls = mdSpy.mock.calls.length;
       mdSpy.mockRestore();
 

@@ -44,6 +44,7 @@ outdated-plus --older-than 30 --format md --sort-by age_latest
 |--------|-------------|---------|
 | `--older-than N` | Only show packages older than N days | 0 (show all) |
 | `--show-all` | Show all outdated packages regardless of age | false |
+| `--wanted` | Show Wanted version columns (hidden by default) | false |
 | `--format FORMAT` | Output format: `plain` or `md` | `plain` |
 | `--sort-by FIELD` | Sort by: `name`, `age_latest`, `age_wanted`, `published_latest`, `published_wanted`, `current`, `wanted`, `latest` | `published_latest` |
 | `--order ORDER` | Sort order: `asc` or `desc` | `desc` |
@@ -55,33 +56,37 @@ outdated-plus --older-than 30 --format md --sort-by age_latest
 
 The tool displays the following information for each outdated package:
 
+### Default Output (6 columns)
 - **Package**: Package name
 - **Current**: Currently installed version
-- **Wanted**: Version that satisfies your semver range
-- **To Wanted**: Bump type to reach wanted version (major/minor/patch)
 - **Latest**: Latest available version
-- **To Latest**: Bump type to reach latest version
+- **To Latest**: Bump type to reach latest version (major/minor/patch)
+- **Published**: When the latest version was published
+- **Age(d)**: Days since latest version was published
+
+### With `--wanted` Flag (10 columns)
+Additionally shows:
+- **Wanted**: Version that satisfies your semver range
+- **To Wanted**: Bump type to reach wanted version
 - **Published (Wanted)**: When the wanted version was published
 - **Age(d) (Wanted)**: Days since wanted version was published
-- **Published (Latest)**: When the latest version was published
-- **Age(d) (Latest)**: Days since latest version was published
 
 ### Example Output
 
 #### Plain Text Format (default)
 ```
+Package     Current  Latest  To Latest  Published         Age(d)
+----------  -------  ------  ---------  ----------------  ------
+package-a   1.0.0    2.0.0   major      2023-11-15 10:00      16
+package-b   2.0.0    2.1.0   minor      2023-11-20 10:00      11
+```
+
+#### With `--wanted` Flag
+```
 Package     Current  Wanted  To Wanted  Latest  To Latest  Published (Wanted)  Age(d) (Wanted)  Published (Latest)  Age(d) (Latest)
 ----------  -------  ------  ---------  ------  ---------  ------------------  ---------------  ------------------  ---------------
 package-a   1.0.0    1.1.0   minor      2.0.0   major      2023-11-01 10:00   30               2023-11-15 10:00    16
 package-b   2.0.0    2.0.0   same       2.1.0   minor      2023-10-01 10:00   61               2023-11-20 10:00    11
-```
-
-#### Markdown Format (`--format md`)
-```markdown
-| Package | Current | Wanted | To Wanted | Latest | To Latest | Published (Wanted) | Age(d) (Wanted) | Published (Latest) | Age(d) (Latest) |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| package-a | 1.0.0 | 1.1.0 | minor | 2.0.0 | major | 2023-11-01 10:00 | 30 | 2023-11-15 10:00 | 16 |
-| package-b | 2.0.0 | 2.0.0 | same | 2.1.0 | minor | 2023-10-01 10:00 | 61 | 2023-11-20 10:00 | 11 |
 ```
 
 

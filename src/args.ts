@@ -23,6 +23,7 @@ export function parseArgs(argv: string[]): Args {
   const concurrency = Number(a.get('--concurrency') ?? 12);
   const olderThan = Number(a.get('--older-than') ?? 0);
   const showAll = Boolean(a.get('--show-all'));
+  const showWanted = Boolean(a.get('--wanted'));
   const iso = Boolean(a.get('--iso'));
   // Parse skip packages from command line
   const skipPackages: string[] = [];
@@ -55,6 +56,7 @@ export function parseArgs(argv: string[]): Args {
   return {
     olderThan,
     showAll,
+    showWanted,
     iso,
     concurrency: Math.max(1, concurrency),
     sortBy: normalizedSort as Args['sortBy'],

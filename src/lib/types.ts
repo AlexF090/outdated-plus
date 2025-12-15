@@ -33,6 +33,7 @@ export type Row = {
 export type Args = {
   olderThan: number;
   showAll: boolean;
+  showWanted: boolean;
   iso: boolean;
   concurrency: number;
   sortBy:

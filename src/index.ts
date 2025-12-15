@@ -229,10 +229,10 @@ export async function run(): Promise<number> {
 
   switch (args.format) {
     case 'md':
-      printMarkdown(rows);
+      printMarkdown(rows, args.showWanted);
       break;
     default:
-      printPlain(rows);
+      printPlain(rows, args.showWanted);
   }
   return 0;
 }

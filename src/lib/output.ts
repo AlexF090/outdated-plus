@@ -21,38 +21,56 @@ export function printSkippedInfo(
   }
 }
 
-export function printPlain(rows: Row[]) {
-  const headers = [
-    'Package',
-    'Current',
-    'Wanted',
-    'To Wanted',
-    'Latest',
-    'To Latest',
-    'Published (Wanted)',
-    'Age(d) (Wanted)',
-    'Published (Latest)',
-    'Age(d) (Latest)',
-  ];
-  const mapRow = (r: Row) => [
-    r.Package,
-    r.Current,
-    r.Wanted,
-    r.ToWanted,
-    r.Latest,
-    r.ToLatest,
-    r.PublishedWanted,
-    r.AgeWanted,
-    r.PublishedLatest,
-    r.AgeLatest,
-  ];
+export function printPlain(rows: Row[], showWanted = false) {
+  const headers = showWanted
+    ? [
+        'Package',
+        'Current',
+        'Wanted',
+        'To Wanted',
+        'Latest',
+        'To Latest',
+        'Published (Wanted)',
+        'Age(d) (Wanted)',
+        'Published (Latest)',
+        'Age(d) (Latest)',
+      ]
+    : ['Package', 'Current', 'Latest', 'To Latest', 'Published', 'Age(d)'];
+
+  const mapRow = (r: Row) =>
+    showWanted
+      ? [
+          r.Package,
+          r.Current,
+          r.Wanted,
+          r.ToWanted,
+          r.Latest,
+          r.ToLatest,
+          r.PublishedWanted,
+          r.AgeWanted,
+          r.PublishedLatest,
+          r.AgeLatest,
+        ]
+      : [
+          r.Package,
+          r.Current,
+          r.Latest,
+          r.ToLatest,
+          r.PublishedLatest,
+          r.AgeLatest,
+        ];
 
   const all = [headers, ...rows.map(mapRow)];
   const widths = headers.map((_, i) =>
     Math.max(...all.map((row) => String(row[i]).length)),
   );
+
   const fmt = (vals: string[]) =>
-    `${vals[0].padEnd(widths[0])}  ${vals[1].padEnd(widths[1])}  ${vals[2].padEnd(widths[2])}  ${vals[3].padEnd(widths[3])}  ${vals[4].padEnd(widths[4])}  ${vals[5].padEnd(widths[5])}  ${vals[6].padEnd(widths[6])}  ${vals[7].padStart(widths[7])}  ${vals[8].padEnd(widths[8])}  ${vals[9].padStart(widths[9])}`;
+    vals
+      .map((v, i) =>
+        i === vals.length - 1 ? v.padStart(widths[i]) : v.padEnd(widths[i]),
+      )
+      .join('  ');
 
   console.log(fmt(headers));
   console.log(fmt(widths.map((w) => '-'.repeat(w))));
@@ -61,35 +79,46 @@ export function printPlain(rows: Row[]) {
   }
 }
 
-export function printMarkdown(rows: Row[]) {
-  const headers = [
-    'Package',
-    'Current',
-    'Wanted',
-    'To Wanted',
-    'Latest',
-    'To Latest',
-    'Published (Wanted)',
-    'Age(d) (Wanted)',
-    'Published (Latest)',
-    'Age(d) (Latest)',
-  ];
+export function printMarkdown(rows: Row[], showWanted = false) {
+  const headers = showWanted
+    ? [
+        'Package',
+        'Current',
+        'Wanted',
+        'To Wanted',
+        'Latest',
+        'To Latest',
+        'Published (Wanted)',
+        'Age(d) (Wanted)',
+        'Published (Latest)',
+        'Age(d) (Latest)',
+      ]
+    : ['Package', 'Current', 'Latest', 'To Latest', 'Published', 'Age(d)'];
+
   console.log(`| ${headers.join(' | ')} |`);
   console.log(`| ${headers.map(() => '---').join(' | ')} |`);
   for (const r of rows) {
-    console.log(
-      `| ${[
-        r.Package,
-        r.Current,
-        r.Wanted,
-        r.ToWanted,
-        r.Latest,
-        r.ToLatest,
-        r.PublishedWanted,
-        r.AgeWanted,
-        r.PublishedLatest,
-        r.AgeLatest,
-      ].join(' | ')} |`,
-    );
+    const values = showWanted
+      ? [
+          r.Package,
+          r.Current,
+          r.Wanted,
+          r.ToWanted,
+          r.Latest,
+          r.ToLatest,
+          r.PublishedWanted,
+          r.AgeWanted,
+          r.PublishedLatest,
+          r.AgeLatest,
+        ]
+      : [
+          r.Package,
+          r.Current,
+          r.Latest,
+          r.ToLatest,
+          r.PublishedLatest,
+          r.AgeLatest,
+        ];
+    console.log(`| ${values.join(' | ')} |`);
   }
 }
