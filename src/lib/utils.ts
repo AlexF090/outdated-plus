@@ -141,17 +141,34 @@ export function fmtTime(ms: number | null, iso: boolean): string {
   return `${date} ${time}`;
 }
 
+const parseSemverCache = new Map<
+  string,
+  [number, number, number, string[]] | null
+>();
+
 export function parseSemver(
   v: string,
 ): [number, number, number, string[]] | null {
+  if (parseSemverCache.has(v)) {
+    return parseSemverCache.get(v) ?? null;
+  }
+
   const re =
     /^[v=]*(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/;
   const m = re.exec(v ?? '');
   if (!m) {
+    parseSemverCache.set(v, null);
     return null;
   }
   const prerelease = m[4] ? m[4].split('.') : [];
-  return [Number(m[1]), Number(m[2]), Number(m[3]), prerelease];
+  const result: [number, number, number, string[]] = [
+    Number(m[1]),
+    Number(m[2]),
+    Number(m[3]),
+    prerelease,
+  ];
+  parseSemverCache.set(v, result);
+  return result;
 }
 
 /**
