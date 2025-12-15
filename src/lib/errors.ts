@@ -3,43 +3,44 @@
  */
 
 export class OutdatedPlusError extends Error {
-  constructor(
-    message: string,
-    public readonly code: string,
-  ) {
+  public readonly code: string;
+
+  constructor(message: string, code: string) {
     super(message);
+    this.code = code;
     this.name = 'OutdatedPlusError';
     Error.captureStackTrace?.(this, this.constructor);
   }
 }
 
 export class NetworkError extends OutdatedPlusError {
-  constructor(
-    message: string,
-    public readonly url?: string,
-    public readonly statusCode?: number,
-  ) {
+  public readonly url?: string;
+  public readonly statusCode?: number;
+
+  constructor(message: string, url?: string, statusCode?: number) {
     super(message, 'NETWORK_ERROR');
+    this.url = url;
+    this.statusCode = statusCode;
     this.name = 'NetworkError';
   }
 }
 
 export class RegistryError extends OutdatedPlusError {
-  constructor(
-    message: string,
-    public readonly packageName: string,
-  ) {
+  public readonly packageName: string;
+
+  constructor(message: string, packageName: string) {
     super(message, 'REGISTRY_ERROR');
+    this.packageName = packageName;
     this.name = 'RegistryError';
   }
 }
 
 export class ParseError extends OutdatedPlusError {
-  constructor(
-    message: string,
-    public readonly source?: string,
-  ) {
+  public readonly source?: string;
+
+  constructor(message: string, source?: string) {
     super(message, 'PARSE_ERROR');
+    this.source = source;
     this.name = 'ParseError';
   }
 }
