@@ -1,0 +1,56 @@
+# Source files (only dist is needed)
+src/
+tests/
+*.test.ts
+*.test.js
+
+# Configuration files
+tsconfig.json
+tsconfig.test.json
+vitest.config.ts
+eslint.config.js
+.prettierignore
+.gitignore
+.npmignore
+
+# Development files
+.github/
+.editorconfig
+.vscode/
+.idea/
+
+# Documentation (only README.md, CHANGELOG.md, and LICENSE are included via package.json files)
+SECURITY.md
+
+# Build artifacts
+*.tsbuildinfo
+*.map
+
+# Environment files
+.env
+.env.*
+.npmrc.local
+.npmrc.private
+
+# Logs
+*.log
+npm-debug.log*
+yarn-error.log*
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Lock files (package-lock.json is included for reproducibility)
+yarn.lock
+pnpm-lock.yaml
+

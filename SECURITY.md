@@ -4,20 +4,20 @@
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 1.2.x   | :white_check_mark: |
-| < 1.2   | :x:                |
+| 1.3.x   | :white_check_mark: |
+| < 1.3   | :x:                |
 
 ## Requirements
 
-- Node.js 22+ (LTS)
-- npm 11+
+- Node.js >=18.0.0
+- npm >=9.0.0
 
 ## Reporting a Vulnerability
 
 If you discover a security vulnerability in this project, please report it responsibly:
 
 1. **Do not** open a public issue
-2. Email the maintainer directly at: [your-email@example.com]
+2. Email the maintainer directly or create a private security advisory on GitHub
 3. Include as much detail as possible about the vulnerability
 4. Allow reasonable time for response before public disclosure
 

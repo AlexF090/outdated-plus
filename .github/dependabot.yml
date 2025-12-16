@@ -7,6 +7,7 @@ updates:
       interval: 'weekly'
       day: 'monday'
       time: '09:00'
+      timezone: 'Europe/Berlin'
     open-pull-requests-limit: 10
     reviewers:
       - 'AlexF090'
@@ -15,21 +16,21 @@ updates:
     commit-message:
       prefix: 'deps'
       include: 'scope'
-    # Allow security updates even for major versions
+    versioning-strategy: auto
+    rebase-strategy: auto
     allow:
       - dependency-type: 'direct'
       - dependency-type: 'indirect'
     labels:
       - 'dependencies'
       - 'automated'
-    # Ignore major version updates for now to avoid breaking changes
-    # But allow security updates even for major versions
     ignore:
       - dependency-name: '*'
         update-types: ['version-update:semver-major']
     # Group minor and patch updates together
     groups:
       development-dependencies:
+        applies-to: version-updates
         patterns:
           - '@types/*'
           - 'eslint*'
@@ -40,6 +41,7 @@ updates:
           - 'minor'
           - 'patch'
       production-dependencies:
+        applies-to: version-updates
         patterns:
           - '*'
         exclude-patterns:
@@ -51,3 +53,21 @@ updates:
         update-types:
           - 'minor'
           - 'patch'
+      security-updates-dev:
+        applies-to: security-updates
+        patterns:
+          - '@types/*'
+          - 'eslint*'
+          - 'prettier*'
+          - 'typescript'
+          - 'vitest'
+      security-updates-prod:
+        applies-to: security-updates
+        patterns:
+          - '*'
+        exclude-patterns:
+          - '@types/*'
+          - 'eslint*'
+          - 'prettier*'
+          - 'typescript'
+          - 'vitest'

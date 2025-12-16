@@ -9,6 +9,8 @@ describe('parseArgs', () => {
     const result = parseArgs(['node', 'script.js']);
     expect(result.olderThan).toBe(0);
     expect(result.showAll).toBe(false);
+    expect(result.showWanted).toBe(false);
+    expect(result.quiet).toBe(false);
     expect(result.iso).toBe(false);
     expect(result.concurrency).toBe(12);
     expect(result.sortBy).toBe('published_latest');
@@ -176,9 +178,6 @@ describe('cleanupAndSaveSkipFile', () => {
         current: '17.0.0',
         wanted: '18.0.0',
         latest: '18.2.0',
-        location: '',
-        dependent: '',
-        type: 'dependencies',
       },
     };
 
@@ -197,9 +196,6 @@ describe('cleanupAndSaveSkipFile', () => {
         current: '17.0.0',
         wanted: '17.2.0', // wanted is below skip version, so entry should be kept
         latest: '18.2.0',
-        location: '',
-        dependent: '',
-        type: 'dependencies',
       },
       // vue is not in outdated list anymore, so it should be removed
     };
@@ -222,17 +218,11 @@ describe('cleanupAndSaveSkipFile', () => {
         current: '18.0.0', // Now at skip version, so react@18.0.0 should be removed
         wanted: '18.2.0',
         latest: '18.2.0',
-        location: '',
-        dependent: '',
-        type: 'dependencies',
       },
       vue: {
         current: '2.9.0',
         wanted: '2.9.5', // wanted is below skip version, so vue@3.0.0 should be kept
         latest: '3.2.0',
-        location: '',
-        dependent: '',
-        type: 'dependencies',
       },
     };
 
@@ -254,9 +244,6 @@ describe('cleanupAndSaveSkipFile', () => {
         current: '17.0.0',
         wanted: '18.0.0', // Wanted is now at skip version
         latest: '18.2.0',
-        location: '',
-        dependent: '',
-        type: 'dependencies',
       },
     };
 
@@ -278,9 +265,6 @@ describe('cleanupAndSaveSkipFile', () => {
         current: '17.0.0',
         wanted: '17.2.0', // Both below skip version
         latest: '18.2.0',
-        location: '',
-        dependent: '',
-        type: 'dependencies',
       },
     };
 
@@ -299,17 +283,11 @@ describe('cleanupAndSaveSkipFile', () => {
         current: '17.0.0',
         wanted: '18.0.0',
         latest: '18.2.0',
-        location: '',
-        dependent: '',
-        type: 'dependencies',
       },
       vue: {
         current: '2.9.0',
         wanted: '3.0.0', // wanted equals skip version, so vue@3.0.0 should be removed
         latest: '3.2.0',
-        location: '',
-        dependent: '',
-        type: 'dependencies',
       },
     };
 
@@ -331,9 +309,6 @@ describe('cleanupAndSaveSkipFile', () => {
         current: '18.0.0',
         wanted: '18.2.0',
         latest: '18.2.0',
-        location: '',
-        dependent: '',
-        type: 'dependencies',
       },
     };
 

@@ -1,5 +1,8 @@
 # Add files here to ignore them from prettier formatting
 /dist
+dist/
+node_modules/
+coverage/
 /coverage
 /apps/web/src/assets/*
 crowdin.*

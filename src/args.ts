@@ -3,6 +3,39 @@ import { join } from 'node:path';
 import type { Args, OutdatedMap, SkipFileConfig } from './lib/types.js';
 import { isVersionHigher, parseSkipEntry } from './lib/utils.js';
 
+function isSortBy(value: unknown): value is Args['sortBy'] {
+  return (
+    value === 'name' ||
+    value === 'age' ||
+    value === 'published' ||
+    value === 'age_latest' ||
+    value === 'age_wanted' ||
+    value === 'published_latest' ||
+    value === 'published_wanted' ||
+    value === 'current' ||
+    value === 'wanted' ||
+    value === 'latest'
+  );
+}
+
+function isOrder(value: unknown): value is Args['order'] {
+  return value === 'asc' || value === 'desc';
+}
+
+function isFormat(value: unknown): value is Args['format'] {
+  return value === 'plain' || value === 'md';
+}
+
+/**
+ * Parses command-line arguments into a structured Args object.
+ *
+ * Supports all CLI options including --check-all, --older-than, --format, --sort-by,
+ * --order, --wanted, --quiet, --iso, --concurrency, and --skip.
+ * Also loads skip packages from .outdated-plus-skip file if present.
+ *
+ * @param argv - Command-line arguments array (typically process.argv).
+ * @returns Parsed arguments object with all options and defaults applied.
+ */
 export function parseArgs(argv: string[]): Args {
   const a = new Map<string, string | true>();
   for (let i = 2; i < argv.length; i += 1) {
@@ -17,12 +50,22 @@ export function parseArgs(argv: string[]): Args {
       }
     }
   }
-  const sortBy = (a.get('--sort-by') as Args['sortBy']) ?? 'published_latest';
-  const order = (a.get('--order') as Args['order']) ?? 'desc';
-  const format = (a.get('--format') as Args['format']) ?? 'plain';
-  const concurrency = Number(a.get('--concurrency') ?? 12);
-  const olderThan = Number(a.get('--older-than') ?? 0);
+  const sortByRaw = a.get('--sort-by');
+  const sortBy = isSortBy(sortByRaw) ? sortByRaw : 'published_latest';
+  const orderRaw = a.get('--order');
+  const order = isOrder(orderRaw) ? orderRaw : 'desc';
+  const formatRaw = a.get('--format');
+  const format = isFormat(formatRaw) ? formatRaw : 'plain';
+  const concurrencyRaw = Number(a.get('--concurrency') ?? 12);
+  const concurrency = Number.isNaN(concurrencyRaw)
+    ? 12
+    : Math.min(100, Math.max(1, concurrencyRaw));
+  const olderThanRaw = Number(a.get('--older-than') ?? 0);
+  const olderThan = Number.isNaN(olderThanRaw) ? 0 : Math.max(0, olderThanRaw);
   const showAll = Boolean(a.get('--show-all'));
+  const showWanted = Boolean(a.get('--wanted'));
+  const quiet = Boolean(a.get('--quiet'));
+  const checkAll = Boolean(a.get('--check-all'));
   const iso = Boolean(a.get('--iso'));
   // Parse skip packages from command line
   const skipPackages: string[] = [];
@@ -46,7 +89,7 @@ export function parseArgs(argv: string[]): Args {
     // Default file doesn't exist, ignore
   }
 
-  const normalizedSort =
+  const normalizedSort: Args['sortBy'] =
     sortBy === 'age'
       ? 'age_latest'
       : sortBy === 'published'
@@ -55,9 +98,12 @@ export function parseArgs(argv: string[]): Args {
   return {
     olderThan,
     showAll,
+    showWanted,
+    quiet,
+    checkAll,
     iso,
-    concurrency: Math.max(1, concurrency),
-    sortBy: normalizedSort as Args['sortBy'],
+    concurrency,
+    sortBy: normalizedSort,
     order,
     format,
     skip: [...skipPackages, ...fileSkipPackages],
@@ -67,6 +113,15 @@ export function parseArgs(argv: string[]): Args {
   };
 }
 
+/**
+ * Adds command-line skip entries to the skip configuration file.
+ *
+ * Only adds entries that don't already exist in the file.
+ *
+ * @param skipConfig - Current skip configuration, or null if file doesn't exist.
+ * @param skipFilePath - Path to the skip file, or null to use default.
+ * @param commandLineSkips - Array of skip entries from command line.
+ */
 export function addSkipEntriesToFile(
   skipConfig: SkipFileConfig | null,
   skipFilePath: string | null,
@@ -103,6 +158,19 @@ export function addSkipEntriesToFile(
   }
 }
 
+/**
+ * Cleans up skip file entries that are no longer relevant.
+ *
+ * Removes entries where:
+ * - The package is no longer outdated, or
+ * - The version-specific skip entry is no longer needed (package has been updated).
+ *
+ * Only performs cleanup if autoCleanup is enabled in the config.
+ *
+ * @param skipConfig - Current skip configuration, or null if file doesn't exist.
+ * @param skipFilePath - Path to the skip file, or null to use default.
+ * @param outdated - Map of currently outdated packages.
+ */
 export function cleanupAndSaveSkipFile(
   skipConfig: SkipFileConfig | null,
   skipFilePath: string | null,
