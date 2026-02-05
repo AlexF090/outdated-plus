@@ -320,11 +320,8 @@ export class ProgressBar {
     if (!this.enabled) {
       return;
     }
-    // Defensive: check if clearLine is available before calling
-    if (typeof process.stderr.clearLine === 'function') {
-      process.stderr.write?.('\r');
-      process.stderr.clearLine(0);
-    }
+    process.stderr.write?.('\r');
+    process.stderr.clearLine?.(0);
   }
 }
 
