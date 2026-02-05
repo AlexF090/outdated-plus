@@ -4,6 +4,9 @@
  */
 
 // Time constants
+/**
+ * Milliseconds in one day.
+ */
 export const MS_PER_DAY = 86_400_000;
 
 // Age thresholds for colorization (in days)
