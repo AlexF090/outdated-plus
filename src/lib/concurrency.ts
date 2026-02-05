@@ -24,6 +24,7 @@ export type FetchResult<T> = {
  */
 export async function fetchWithConcurrency<T>(
   items: string[],
+  // eslint-disable-next-line no-unused-vars
   fetcher: (item: string) => Promise<T>,
   onProgress: () => void,
   fallbackValue: T,
