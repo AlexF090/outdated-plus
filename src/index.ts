@@ -13,10 +13,16 @@ import {
   cleanupAndSaveSkipFile,
   parseArgs,
 } from './args.js';
+import { fetchWithConcurrency, META_FALLBACK } from './lib/concurrency.js';
+import {
+  HTTP_REQUEST_TIMEOUT_MS,
+  NODE_MODULES_REGEX,
+  NPM_REGISTRY,
+} from './lib/constants.js';
 import { formatError, NetworkError, RegistryError } from './lib/errors.js';
 import { printMarkdown, printPlain, printSkippedInfo } from './lib/output.js';
 import { buildRows, sortRows } from './lib/processing.js';
-import type { Meta, OutdatedEntry, OutdatedMap } from './lib/types.js';
+import type { Meta, OutdatedMap } from './lib/types.js';
 import {
   extractLatestVersion,
   extractTimeMap,
@@ -25,9 +31,6 @@ import {
   parseSkipEntry,
   shouldSkipPackage,
 } from './lib/utils.js';
-
-const NPM_REGISTRY = 'https://registry.npmjs.org';
-const HTTP_REQUEST_TIMEOUT_MS = 10000;
 
 /**
  * Spawns a command and returns its JSON output.
@@ -98,8 +101,6 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
       signal: controller.signal,
     });
 
-    clearTimeout(timeoutId);
-
     if (!response.ok) {
       if (response.status === 404) {
         throw new RegistryError(`Package not found`, pkg);
@@ -122,8 +123,6 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
 
     return { latest, timeMap };
   } catch (error) {
-    clearTimeout(timeoutId);
-
     if (error instanceof NetworkError || error instanceof RegistryError) {
       throw error;
     }
@@ -136,6 +135,8 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
       error instanceof Error ? error.message : 'Unknown network error',
       url,
     );
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
@@ -192,7 +193,7 @@ export function getInstalledVersions(cwd: string): Record<string, string> {
         if (key === '') {
           continue;
         }
-        const match = key.match(/node_modules\/(.+)$/);
+        const match = key.match(NODE_MODULES_REGEX);
         if (match && hasStringVersion(value)) {
           const pkgName = match[1];
           versions[pkgName] = value.version;
@@ -239,56 +240,37 @@ export async function buildOutdatedMapViaHTTP(
   }
 
   const pb = new ProgressBar(pkgNames.length, quiet);
-  const metas: Record<string, Meta> = {};
-  const outdated: OutdatedMap = {};
 
   // Fetch metadata with concurrency limit
-  const limit = Math.max(1, concurrency);
-  let inFlight = 0;
-  let index = 0;
-
-  await new Promise<void>((resolve) => {
-    const tick = () => {
-      while (inFlight < limit && index < pkgNames.length) {
-        const pkgName = pkgNames[index];
-        index += 1;
-        inFlight += 1;
-
-        fetchPackageMeta(pkgName)
-          .then((meta) => {
-            metas[pkgName] = meta;
-
-            const current = installedVersions[pkgName] || '0.0.0';
-            const latest = meta.latest;
-
-            // Only add to outdated if current != latest
-            if (current !== latest && latest) {
-              const entry: OutdatedEntry = {
-                current,
-                wanted: latest, // In --check-all mode, wanted = latest
-                latest,
-              };
-              outdated[pkgName] = entry;
-            }
-          })
-          .catch(() => {
-            metas[pkgName] = { latest: '', timeMap: {} };
-          })
-          .finally(() => {
-            inFlight -= 1;
-            pb.update(1);
-            if (index >= pkgNames.length && inFlight === 0) {
-              resolve();
-            } else {
-              tick();
-            }
-          });
-      }
-    };
-    tick();
-  });
+  const metas = await fetchWithConcurrency<Meta>(
+    pkgNames,
+    fetchPackageMeta,
+    () => pb.update(1),
+    META_FALLBACK,
+    concurrency,
+  );
 
   pb.finish();
+
+  // Build outdated map from fetched metadata
+  const outdated: OutdatedMap = {};
+  for (const pkgName of pkgNames) {
+    const meta = metas[pkgName];
+    if (!meta) continue;
+
+    const current = installedVersions[pkgName] || '0.0.0';
+    const latest = meta.latest;
+
+    // Only add to outdated if current != latest
+    if (current !== latest && latest) {
+      outdated[pkgName] = {
+        current,
+        wanted: latest, // In --check-all mode, wanted = latest
+        latest,
+      };
+    }
+  }
+
   return { outdated, metas };
 }
 
@@ -330,14 +312,17 @@ export class ProgressBar {
   }
 
   /**
-   * Finishes the progress bar.
+   * Finishes the progress bar and clears the line.
    */
   finish() {
     if (!this.enabled) {
       return;
     }
-    process.stderr.write?.('\r');
-    process.stderr.clearLine?.(0);
+    // Defensive: check if clearLine is available before calling
+    if (typeof process.stderr.clearLine === 'function') {
+      process.stderr.write?.('\r');
+      process.stderr.clearLine(0);
+    }
   }
 }
 
@@ -417,37 +402,13 @@ export async function run(): Promise<number> {
       const pb = new ProgressBar(pkgs.length, args.quiet);
 
       // Fetch metadata with concurrency limit (HTTP API only for timestamps)
-      const limit = Math.max(1, args.concurrency);
-      metas = {};
-      let inFlight = 0;
-      let index = 0;
-
-      await new Promise<void>((resolve) => {
-        const tick = () => {
-          while (inFlight < limit && index < pkgs.length) {
-            const p = pkgs[index];
-            index += 1;
-            inFlight += 1;
-            fetchPackageMeta(p)
-              .then((m) => {
-                metas[p] = m;
-              })
-              .catch(() => {
-                metas[p] = { latest: '', timeMap: {} };
-              })
-              .finally(() => {
-                inFlight -= 1;
-                pb.update(1);
-                if (index >= pkgs.length && inFlight === 0) {
-                  resolve();
-                } else {
-                  tick();
-                }
-              });
-          }
-        };
-        tick();
-      });
+      metas = await fetchWithConcurrency<Meta>(
+        pkgs,
+        fetchPackageMeta,
+        () => pb.update(1),
+        META_FALLBACK,
+        args.concurrency,
+      );
 
       pb.finish();
     }

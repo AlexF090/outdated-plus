@@ -1,8 +1,12 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import {
+  DEFAULT_CONCURRENCY,
+  MAX_CONCURRENCY,
+  MIN_CONCURRENCY,
+} from './lib/constants.js';
 import type { Args, OutdatedMap, SkipFileConfig } from './lib/types.js';
 import { isVersionHigher, parseSkipEntry } from './lib/utils.js';
-
 function isSortBy(value: unknown): value is Args['sortBy'] {
   return (
     value === 'name' ||
@@ -56,10 +60,10 @@ export function parseArgs(argv: string[]): Args {
   const order = isOrder(orderRaw) ? orderRaw : 'desc';
   const formatRaw = a.get('--format');
   const format = isFormat(formatRaw) ? formatRaw : 'plain';
-  const concurrencyRaw = Number(a.get('--concurrency') ?? 12);
+  const concurrencyRaw = Number(a.get('--concurrency') ?? DEFAULT_CONCURRENCY);
   const concurrency = Number.isNaN(concurrencyRaw)
-    ? 12
-    : Math.min(100, Math.max(1, concurrencyRaw));
+    ? DEFAULT_CONCURRENCY
+    : Math.min(MAX_CONCURRENCY, Math.max(MIN_CONCURRENCY, concurrencyRaw));
   const olderThanRaw = Number(a.get('--older-than') ?? 0);
   const olderThan = Number.isNaN(olderThanRaw) ? 0 : Math.max(0, olderThanRaw);
   const showAll = Boolean(a.get('--show-all'));

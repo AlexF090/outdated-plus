@@ -2,6 +2,7 @@
  * Native ANSI colors utility (no external dependencies)
  */
 
+import { AGE_THRESHOLD_RED, AGE_THRESHOLD_YELLOW } from './constants.js';
 // ANSI escape codes
 const RESET = '\x1b[0m';
 const BOLD = '\x1b[1m';
@@ -81,10 +82,10 @@ export function colorAge(age: number | null): string {
     return '-';
   }
   const str = String(age);
-  if (age > 365) {
+  if (age > AGE_THRESHOLD_RED) {
     return colors.red(str);
   }
-  if (age > 90) {
+  if (age > AGE_THRESHOLD_YELLOW) {
     return colors.yellow(str);
   }
   return colors.green(str);
