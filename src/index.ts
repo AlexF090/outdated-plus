@@ -256,7 +256,9 @@ export async function buildOutdatedMapViaHTTP(
   const outdated: OutdatedMap = {};
   for (const pkgName of pkgNames) {
     const meta = metas[pkgName];
-    if (!meta) continue;
+    if (!meta) {
+      continue;
+    }
 
     const current = installedVersions[pkgName] || '0.0.0';
     const latest = meta.latest;
