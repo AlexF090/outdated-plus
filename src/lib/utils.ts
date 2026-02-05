@@ -1,3 +1,4 @@
+import { MS_PER_DAY } from './constants.js';
 import type { BumpType, NpmRegistryResponse, OutdatedMap } from './types.js';
 
 export function parseIsoZ(s?: string): number | null {
@@ -118,7 +119,7 @@ export function daysAgo(ms: number | null): number | null {
     return null;
   }
   const delta = Date.now() - ms;
-  return Math.max(0, Math.floor(delta / 86400000));
+  return Math.max(0, Math.floor(delta / MS_PER_DAY));
 }
 
 /**
