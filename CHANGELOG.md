@@ -31,8 +31,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Only Node.js built-in modules used
 - Security audit scripts included
 
+## [1.3.2] - 2025-03-12
+
+### Fixed
+
+- Dependency updates (production-dependencies group, balanced-match, flatted)
+
 ## [Unreleased]
-
-### Added
-
-- Future features and improvements
