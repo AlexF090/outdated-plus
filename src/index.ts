@@ -39,25 +39,35 @@ import {
  */
 let shutdownController = new AbortController();
 
+/** Used by tests to simulate SIGINT/SIGTERM during fetchPackageMeta. */
+export function __testAbortShutdown(): void {
+  shutdownController.abort();
+}
+
+/** Used by tests to reset shutdown state after simulating abort. */
+export function __testResetShutdown(): void {
+  shutdownController = new AbortController();
+}
+
 /**
  * Spawns a command and returns its JSON output.
  *
  * @param cmd - The command to execute (e.g., 'npm').
  * @param args - Array of command-line arguments.
- * @returns Promise that resolves to the parsed JSON output, or an empty object if parsing fails.
+ * @returns Promise that resolves to the parsed JSON output, or an empty object if parsing fails. Rejects if the process fails to spawn (e.g. ENOENT).
  */
 export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'ignore'] });
     let out = '';
     let settled = false;
     child.stdout.on('data', (c) => {
       out += String(c);
     });
-    child.on('error', () => {
+    child.on('error', (err) => {
       if (!settled) {
         settled = true;
-        resolve({});
+        reject(err);
       }
     });
     child.on('close', () => {
@@ -81,17 +91,17 @@ export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
  * @returns Promise that resolves to the trimmed text output.
  */
 export function spawnText(cmd: string, args: string[]): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'ignore'] });
     let out = '';
     let settled = false;
     child.stdout.on('data', (c) => {
       out += String(c);
     });
-    child.on('error', () => {
+    child.on('error', (err) => {
       if (!settled) {
         settled = true;
-        resolve('');
+        reject(err);
       }
     });
     child.on('close', () => {
@@ -163,6 +173,9 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
     }
 
     if (error instanceof Error && error.name === 'AbortError') {
+      if (shutdownController.signal.aborted) {
+        throw new NetworkError('Operation cancelled', url);
+      }
       throw new NetworkError('Request timeout', url);
     }
 

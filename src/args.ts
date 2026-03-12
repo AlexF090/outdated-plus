@@ -131,6 +131,7 @@ export function parseArgs(argv: string[]): Args {
       : sortBy === 'published'
         ? 'published_latest'
         : sortBy;
+  const mergedSkips = [...new Set([...skipPackages, ...fileSkipPackages])];
   return {
     olderThan,
     showAll,
@@ -142,7 +143,7 @@ export function parseArgs(argv: string[]): Args {
     sortBy: normalizedSort,
     order,
     format,
-    skip: [...skipPackages, ...fileSkipPackages],
+    skip: mergedSkips,
     _skipConfig: skipConfig,
     _skipFilePath: skipFilePath,
     _commandLineSkips: skipPackages,

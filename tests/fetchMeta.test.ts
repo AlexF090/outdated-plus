@@ -157,4 +157,24 @@ describe('fetchPackageMeta', () => {
 
     await expect(fetchPackageMeta('test-package')).rejects.toThrow();
   });
+
+  it('should throw Operation cancelled when shutdown is aborted during fetch', async () => {
+    mockFetch.mockImplementation((_url: string, opts?: { signal?: AbortSignal }) =>
+      new Promise((_, reject) => {
+        opts?.signal?.addEventListener?.('abort', () =>
+          reject(Object.assign(new Error('Aborted'), { name: 'AbortError' })),
+        );
+      }),
+    );
+
+    const { fetchPackageMeta, __testAbortShutdown, __testResetShutdown } =
+      await import('../src/index.js');
+
+    const p = fetchPackageMeta('test-pkg');
+    await Promise.resolve();
+    __testAbortShutdown();
+
+    await expect(p).rejects.toThrow('Operation cancelled');
+    __testResetShutdown();
+  });
 });

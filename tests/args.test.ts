@@ -1,4 +1,12 @@
-import { existsSync, readFileSync, unlinkSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanupAndSaveSkipFile, parseArgs } from '../src/args.js';
@@ -186,6 +194,36 @@ describe('parseArgs', () => {
       '--skip=vue,angular',
     ]);
     expect(result.skip).toEqual(['react', 'vue', 'angular']);
+  });
+
+  it('should deduplicate skip entries across command line and skip file', () => {
+    const originalCwd = process.cwd();
+    const testDir = mkdtempSync(join(tmpdir(), 'outdated-plus-args-test-'));
+
+    try {
+      writeFileSync(
+        join(testDir, '.outdated-plus-skip'),
+        JSON.stringify({
+          packages: ['react', 'vue'],
+          reason: 'test',
+          autoCleanup: true,
+        }),
+      );
+
+      process.chdir(testDir);
+
+      const result = parseArgs([
+        'node',
+        'script.js',
+        '--skip',
+        'react,angular',
+      ]);
+
+      expect(result.skip).toEqual(['react', 'angular', 'vue']);
+    } finally {
+      process.chdir(originalCwd);
+      rmSync(testDir, { recursive: true, force: true });
+    }
   });
 
   it('should handle boolean flags with --key=value args', () => {

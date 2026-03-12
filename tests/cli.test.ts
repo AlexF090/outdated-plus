@@ -2,8 +2,11 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { spawn } from 'node:child_process';
 import { NODE_MODULES_REGEX } from '../src/lib/constants.js';
 import { getInstalledVersions, readPackageJson } from '../src/index.js';
+
+vi.mock('node:child_process', () => ({ spawn: vi.fn() }));
 
 describe('NODE_MODULES_REGEX', () => {
   it('should match simple package path', () => {
@@ -326,5 +329,39 @@ describe('ProgressBar', () => {
 
     pb.update(1);
     expect(consoleSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('run', () => {
+  it('should return exit code 1 and print error when npm spawn fails (e.g. ENOENT)', async () => {
+    vi.resetModules();
+    vi.mocked(spawn).mockReturnValue({
+      stdout: { on: vi.fn() },
+      on: vi.fn((event: string, handler: (err: Error) => void) => {
+        if (event === 'error') {
+          setImmediate(() =>
+            handler(
+              Object.assign(new Error('spawn npm ENOENT'), { code: 'ENOENT' }),
+            ),
+          );
+        }
+      }),
+    } as ReturnType<typeof spawn>);
+
+    const argv = process.argv;
+    process.argv = ['node', 'outdated-plus'];
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const { run } = await import('../src/index.js');
+    const code = await run();
+
+    expect(code).toBe(1);
+    expect(errSpy).toHaveBeenCalledWith(
+      expect.stringMatching(/ENOENT|spawn npm/),
+    );
+
+    process.argv = argv;
+    errSpy.mockRestore();
+    vi.mocked(spawn).mockReset();
   });
 });
