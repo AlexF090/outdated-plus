@@ -6,7 +6,11 @@ import {
   MIN_CONCURRENCY,
 } from './lib/constants.js';
 import type { Args, OutdatedMap, SkipFileConfig } from './lib/types.js';
-import { isVersionHigher, parseSkipEntry } from './lib/utils.js';
+import {
+  isSkipFileConfig,
+  isVersionHigher,
+  parseSkipEntry,
+} from './lib/utils.js';
 function isSortBy(value: unknown): value is Args['sortBy'] {
   return (
     value === 'name' ||
@@ -42,16 +46,34 @@ function isFormat(value: unknown): value is Args['format'] {
  */
 export function parseArgs(argv: string[]): Args {
   const a = new Map<string, string | true>();
+  const skipArgs: string[] = [];
   for (let i = 2; i < argv.length; i += 1) {
-    const k = argv[i];
-    const v = argv[i + 1];
-    if (k.startsWith('--')) {
+    let k = argv[i];
+    let v: string | undefined = argv[i + 1];
+    if (!k.startsWith('--')) {
+      continue;
+    }
+    // Support --key=value syntax
+    const eqIdx = k.indexOf('=');
+    if (eqIdx !== -1) {
+      v = k.substring(eqIdx + 1);
+      k = k.substring(0, eqIdx);
+    }
+    if (k === '--skip') {
+      // Accumulate --skip values instead of overwriting
       if (v && !v.startsWith('--')) {
-        a.set(k, v);
-        i += 1;
-      } else {
-        a.set(k, true);
+        skipArgs.push(...v.split(',').map((p) => p.trim()));
+        if (eqIdx === -1) {
+          i += 1;
+        }
       }
+    } else if (v !== undefined && !v.startsWith('--') && eqIdx === -1) {
+      a.set(k, v);
+      i += 1;
+    } else if (eqIdx !== -1 && v !== undefined) {
+      a.set(k, v);
+    } else {
+      a.set(k, true);
     }
   }
   const sortByRaw = a.get('--sort-by');
@@ -71,12 +93,7 @@ export function parseArgs(argv: string[]): Args {
   const quiet = Boolean(a.get('--quiet'));
   const checkAll = Boolean(a.get('--check-all'));
   const iso = Boolean(a.get('--iso'));
-  // Parse skip packages from command line
-  const skipPackages: string[] = [];
-  const skipValue = a.get('--skip');
-  if (skipValue && typeof skipValue === 'string') {
-    skipPackages.push(...skipValue.split(',').map((p) => p.trim()));
-  }
+  const skipPackages = skipArgs;
 
   // Load skip packages from default file
   let fileSkipPackages: string[] = [];
@@ -86,11 +103,14 @@ export function parseArgs(argv: string[]): Args {
   try {
     const defaultSkipFile = join(process.cwd(), '.outdated-plus-skip');
     const content = readFileSync(defaultSkipFile, 'utf-8');
-    skipConfig = JSON.parse(content);
-    fileSkipPackages = skipConfig?.packages || [];
-    skipFilePath = defaultSkipFile;
+    const parsed: unknown = JSON.parse(content);
+    if (isSkipFileConfig(parsed)) {
+      skipConfig = parsed;
+      fileSkipPackages = skipConfig.packages;
+      skipFilePath = defaultSkipFile;
+    }
   } catch {
-    // Default file doesn't exist, ignore
+    // Default file doesn't exist or is invalid, ignore
   }
 
   const normalizedSort: Args['sortBy'] =

@@ -140,6 +140,66 @@ describe('parseArgs', () => {
     const result = parseArgs(['node', 'script.js']);
     expect(result.skip).toEqual([]);
   });
+
+  it('should support --key=value syntax', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--sort-by=name',
+      '--concurrency=8',
+      '--order=asc',
+      '--format=md',
+      '--older-than=30',
+    ]);
+    expect(result.sortBy).toBe('name');
+    expect(result.concurrency).toBe(8);
+    expect(result.order).toBe('asc');
+    expect(result.format).toBe('md');
+    expect(result.olderThan).toBe(30);
+  });
+
+  it('should support --skip=value syntax', () => {
+    const result = parseArgs(['node', 'script.js', '--skip=react,vue']);
+    expect(result.skip).toEqual(['react', 'vue']);
+  });
+
+  it('should accumulate multiple --skip flags', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--skip',
+      'react',
+      '--skip',
+      'vue',
+      '--skip',
+      'angular',
+    ]);
+    expect(result.skip).toEqual(['react', 'vue', 'angular']);
+  });
+
+  it('should accumulate mixed --skip and --skip=value flags', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--skip',
+      'react',
+      '--skip=vue,angular',
+    ]);
+    expect(result.skip).toEqual(['react', 'vue', 'angular']);
+  });
+
+  it('should handle boolean flags with --key=value args', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--show-all',
+      '--sort-by=name',
+      '--iso',
+    ]);
+    expect(result.showAll).toBe(true);
+    expect(result.sortBy).toBe('name');
+    expect(result.iso).toBe(true);
+  });
 });
 
 describe('cleanupAndSaveSkipFile', () => {
