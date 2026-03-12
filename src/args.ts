@@ -62,7 +62,15 @@ export function parseArgs(argv: string[]): Args {
     if (k === '--skip') {
       // Accumulate --skip values instead of overwriting
       if (v && !v.startsWith('--')) {
-        skipArgs.push(...v.split(',').map((p) => p.trim()));
+        const parts = v
+          .split(',')
+          .map((p) => p.trim())
+          .filter((p) => p.length > 0);
+        for (const part of parts) {
+          if (!skipArgs.includes(part)) {
+            skipArgs.push(part);
+          }
+        }
         if (eqIdx === -1) {
           i += 1;
         }
@@ -71,7 +79,11 @@ export function parseArgs(argv: string[]): Args {
       a.set(k, v);
       i += 1;
     } else if (eqIdx !== -1 && v !== undefined) {
-      a.set(k, v);
+      // For --key= with an empty value (e.g. "--concurrency="), treat it as
+      // "no value provided" so downstream numeric options keep their defaults.
+      if (v !== '') {
+        a.set(k, v);
+      }
     } else {
       a.set(k, true);
     }

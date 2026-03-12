@@ -183,7 +183,7 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
  * @returns Object containing dependencies and devDependencies. Returns empty objects if file cannot be read or parsed.
  */
 function toStringRecord(value: unknown): Record<string, string> {
-  if (!value || typeof value !== 'object') {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
     return {};
   }
   const result: Record<string, string> = {};
