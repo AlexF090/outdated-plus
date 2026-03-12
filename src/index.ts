@@ -40,13 +40,22 @@ import {
 let shutdownController = new AbortController();
 
 /** Used by tests to simulate SIGINT/SIGTERM during fetchPackageMeta. */
-export function __testAbortShutdown(): void {
+function __testAbortShutdown(): void {
   shutdownController.abort();
 }
 
 /** Used by tests to reset shutdown state after simulating abort. */
-export function __testResetShutdown(): void {
+function __testResetShutdown(): void {
   shutdownController = new AbortController();
+}
+
+if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+  const g = globalThis as {
+    __testAbortShutdown?: () => void;
+    __testResetShutdown?: () => void;
+  };
+  g.__testAbortShutdown = __testAbortShutdown;
+  g.__testResetShutdown = __testResetShutdown;
 }
 
 /**
@@ -136,6 +145,9 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
 
   const onShutdown = () => controller.abort();
   shutdownController.signal.addEventListener('abort', onShutdown);
+  if (shutdownController.signal.aborted) {
+    controller.abort();
+  }
 
   try {
     const response = await fetch(url, {
@@ -219,10 +231,10 @@ export function readPackageJson(cwd: string): {
     if (!data || typeof data !== 'object') {
       return { dependencies: {}, devDependencies: {} };
     }
-    const deps =
-      'dependencies' in data ? toStringRecord(data.dependencies) : {};
+    const obj = data as Record<string, unknown>;
+    const deps = 'dependencies' in obj ? toStringRecord(obj.dependencies) : {};
     const devDeps =
-      'devDependencies' in data ? toStringRecord(data.devDependencies) : {};
+      'devDependencies' in obj ? toStringRecord(obj.devDependencies) : {};
     return { dependencies: deps, devDependencies: devDeps };
   } catch {
     return { dependencies: {}, devDependencies: {} };

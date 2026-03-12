@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+declare global {
+  // Test-only hooks injected from src/index.ts under test runtime
+  var __testAbortShutdown: (() => void) | undefined;
+  var __testResetShutdown: (() => void) | undefined;
+}
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -168,14 +174,13 @@ describe('fetchPackageMeta', () => {
         }),
     );
 
-    const { fetchPackageMeta, __testAbortShutdown, __testResetShutdown } =
-      await import('../src/index.js');
+    const { fetchPackageMeta } = await import('../src/index.js');
 
     const p = fetchPackageMeta('test-pkg');
     await Promise.resolve();
-    __testAbortShutdown();
+    globalThis.__testAbortShutdown?.();
 
     await expect(p).rejects.toThrow('Operation cancelled');
-    __testResetShutdown();
+    globalThis.__testResetShutdown?.();
   });
 });
