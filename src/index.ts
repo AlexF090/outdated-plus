@@ -33,24 +33,60 @@ import {
 } from './lib/utils.js';
 
 /**
+ * Module-level AbortController for graceful shutdown.
+ * Triggered by SIGINT/SIGTERM to cancel all in-flight HTTP requests.
+ * Re-created on each run() invocation to support re-use.
+ */
+let shutdownController = new AbortController();
+
+/** Used by tests to simulate SIGINT/SIGTERM during fetchPackageMeta. */
+function __testAbortShutdown(): void {
+  shutdownController.abort();
+}
+
+/** Used by tests to reset shutdown state after simulating abort. */
+function __testResetShutdown(): void {
+  shutdownController = new AbortController();
+}
+
+if (process.env.NODE_ENV === 'test' || process.env.VITEST) {
+  const g = globalThis as {
+    __testAbortShutdown?: () => void;
+    __testResetShutdown?: () => void;
+  };
+  g.__testAbortShutdown = __testAbortShutdown;
+  g.__testResetShutdown = __testResetShutdown;
+}
+
+/**
  * Spawns a command and returns its JSON output.
  *
  * @param cmd - The command to execute (e.g., 'npm').
  * @param args - Array of command-line arguments.
- * @returns Promise that resolves to the parsed JSON output, or an empty object if parsing fails.
+ * @returns Promise that resolves to the parsed JSON output, or an empty object if parsing fails. Rejects if the process fails to spawn (e.g. ENOENT).
  */
 export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'ignore'] });
     let out = '';
+    let settled = false;
     child.stdout.on('data', (c) => {
       out += String(c);
     });
+    child.on('error', (err) => {
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
+    });
     child.on('close', () => {
-      try {
-        resolve(out.trim() ? JSON.parse(out) : {});
-      } catch {
-        resolve({});
+      if (!settled) {
+        settled = true;
+        try {
+          resolve(out.trim() ? JSON.parse(out) : {});
+        } catch {
+          resolve({});
+        }
       }
     });
   });
@@ -64,14 +100,24 @@ export function spawnJson(cmd: string, args: string[]): Promise<unknown> {
  * @returns Promise that resolves to the trimmed text output.
  */
 export function spawnText(cmd: string, args: string[]): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise((resolve, reject) => {
     const child = spawn(cmd, args, { stdio: ['ignore', 'pipe', 'ignore'] });
     let out = '';
+    let settled = false;
     child.stdout.on('data', (c) => {
       out += String(c);
     });
+    child.on('error', (err) => {
+      if (!settled) {
+        settled = true;
+        reject(err);
+      }
+    });
     child.on('close', () => {
-      resolve(out.trim());
+      if (!settled) {
+        settled = true;
+        resolve(out.trim());
+      }
     });
   });
 }
@@ -87,11 +133,21 @@ export function spawnText(cmd: string, args: string[]): Promise<string> {
 export async function fetchPackageMeta(pkg: string): Promise<Meta> {
   const url = `${NPM_REGISTRY}/${encodeURIComponent(pkg)}`;
 
+  if (shutdownController.signal.aborted) {
+    throw new NetworkError('Operation cancelled', url);
+  }
+
   const controller = new AbortController();
   const timeoutId = setTimeout(
     () => controller.abort(),
     HTTP_REQUEST_TIMEOUT_MS,
   );
+
+  const onShutdown = () => controller.abort();
+  shutdownController.signal.addEventListener('abort', onShutdown);
+  if (shutdownController.signal.aborted) {
+    controller.abort();
+  }
 
   try {
     const response = await fetch(url, {
@@ -99,6 +155,7 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
         Accept: 'application/json',
       },
       signal: controller.signal,
+      redirect: 'error',
     });
 
     if (!response.ok) {
@@ -128,6 +185,9 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
     }
 
     if (error instanceof Error && error.name === 'AbortError') {
+      if (shutdownController.signal.aborted) {
+        throw new NetworkError('Operation cancelled', url);
+      }
       throw new NetworkError('Request timeout', url);
     }
 
@@ -137,6 +197,7 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
     );
   } finally {
     clearTimeout(timeoutId);
+    shutdownController.signal.removeEventListener('abort', onShutdown);
   }
 }
 
@@ -146,6 +207,19 @@ export async function fetchPackageMeta(pkg: string): Promise<Meta> {
  * @param cwd - The current working directory where package.json should be located.
  * @returns Object containing dependencies and devDependencies. Returns empty objects if file cannot be read or parsed.
  */
+function toStringRecord(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+  const result: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value)) {
+    if (typeof v === 'string') {
+      result[k] = v;
+    }
+  }
+  return result;
+}
+
 export function readPackageJson(cwd: string): {
   dependencies: Record<string, string>;
   devDependencies: Record<string, string>;
@@ -153,11 +227,15 @@ export function readPackageJson(cwd: string): {
   try {
     const packageJsonPath = join(cwd, 'package.json');
     const content = readFileSync(packageJsonPath, 'utf-8');
-    const data = JSON.parse(content);
-    return {
-      dependencies: data.dependencies || {},
-      devDependencies: data.devDependencies || {},
-    };
+    const data: unknown = JSON.parse(content);
+    if (!data || typeof data !== 'object') {
+      return { dependencies: {}, devDependencies: {} };
+    }
+    const obj = data as Record<string, unknown>;
+    const deps = 'dependencies' in obj ? toStringRecord(obj.dependencies) : {};
+    const devDeps =
+      'devDependencies' in obj ? toStringRecord(obj.devDependencies) : {};
+    return { dependencies: deps, devDependencies: devDeps };
   } catch {
     return { dependencies: {}, devDependencies: {} };
   }
@@ -326,16 +404,12 @@ export class ProgressBar {
 }
 
 /**
- * Gets the total count of installed packages.
+ * Gets the total count of declared packages from package.json.
  */
-export async function getPackageCount(): Promise<number> {
-  try {
-    const output = await spawnText('npm', ['list', '--depth=0', '--json']);
-    const data = JSON.parse(output);
-    return Object.keys(data.dependencies || {}).length;
-  } catch {
-    return 0;
-  }
+export function getPackageCount(): number {
+  const cwd = process.cwd();
+  const { dependencies, devDependencies } = readPackageJson(cwd);
+  return Object.keys(dependencies).length + Object.keys(devDependencies).length;
 }
 
 /**
@@ -365,6 +439,11 @@ export function printUpToDateMessage(
 export async function run(): Promise<number> {
   const args = parseArgs(process.argv);
 
+  shutdownController = new AbortController();
+  const onSignal = () => shutdownController.abort();
+  process.on('SIGINT', onSignal);
+  process.on('SIGTERM', onSignal);
+
   try {
     let outdated: OutdatedMap;
     let metas: Record<string, Meta>;
@@ -385,13 +464,13 @@ export async function run(): Promise<number> {
         typeof outdatedRaw !== 'object' ||
         Object.keys(outdatedRaw).length === 0
       ) {
-        const packageCount = await getPackageCount();
+        const packageCount = getPackageCount();
         printUpToDateMessage(packageCount, args.quiet);
         return 0;
       }
 
       if (!isOutdatedMap(outdatedRaw)) {
-        const packageCount = await getPackageCount();
+        const packageCount = getPackageCount();
         printUpToDateMessage(packageCount, args.quiet);
         return 0;
       }
@@ -459,7 +538,7 @@ export async function run(): Promise<number> {
       // Only show "up to date" message if no filtering was applied
       const hasFiltering = args.olderThan > 0 || args.skip.length > 0;
       if (!hasFiltering) {
-        const packageCount = await getPackageCount();
+        const packageCount = getPackageCount();
         printUpToDateMessage(packageCount, args.quiet);
       }
       return 0;
@@ -480,6 +559,9 @@ export async function run(): Promise<number> {
       console.error(formatError(error));
     }
     return 1;
+  } finally {
+    process.off('SIGINT', onSignal);
+    process.off('SIGTERM', onSignal);
   }
 }
 

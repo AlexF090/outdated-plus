@@ -6,6 +6,7 @@ import {
   extractLatestVersion,
   extractTimeMap,
   fmtTime,
+  isSkipFileConfig,
   isValidNpmRegistryResponse,
   isVersionHigher,
   parseIsoZ,
@@ -466,5 +467,68 @@ describe('extractTimeMap', () => {
       time: {},
     };
     expect(extractTimeMap(response)).toEqual({});
+  });
+});
+
+describe('isSkipFileConfig', () => {
+  it('should return true for valid config with packages only', () => {
+    expect(isSkipFileConfig({ packages: ['react', 'vue'] })).toBe(true);
+  });
+
+  it('should return true for valid config with all fields', () => {
+    expect(
+      isSkipFileConfig({
+        packages: ['react@18.0.0'],
+        reason: 'Skip for now',
+        autoCleanup: true,
+      }),
+    ).toBe(true);
+  });
+
+  it('should return true for empty packages array', () => {
+    expect(isSkipFileConfig({ packages: [] })).toBe(true);
+  });
+
+  it('should return false for null or undefined', () => {
+    expect(isSkipFileConfig(null)).toBe(false);
+    expect(isSkipFileConfig(undefined)).toBe(false);
+  });
+
+  it('should return false for primitive types', () => {
+    expect(isSkipFileConfig('string')).toBe(false);
+    expect(isSkipFileConfig(123)).toBe(false);
+    expect(isSkipFileConfig(true)).toBe(false);
+  });
+
+  it('should return false for arrays', () => {
+    expect(isSkipFileConfig(['react', 'vue'])).toBe(false);
+  });
+
+  it('should return false when packages key is missing', () => {
+    expect(isSkipFileConfig({ reason: 'test' })).toBe(false);
+  });
+
+  it('should return false when packages is not an array', () => {
+    expect(isSkipFileConfig({ packages: 'react' })).toBe(false);
+    expect(isSkipFileConfig({ packages: 123 })).toBe(false);
+  });
+
+  it('should return false when packages contains non-string entries', () => {
+    expect(isSkipFileConfig({ packages: [123, 'react'] })).toBe(false);
+    expect(isSkipFileConfig({ packages: [null] })).toBe(false);
+  });
+
+  it('should return false when reason is not a string', () => {
+    expect(isSkipFileConfig({ packages: ['react'], reason: 123 })).toBe(false);
+    expect(isSkipFileConfig({ packages: ['react'], reason: true })).toBe(false);
+  });
+
+  it('should return false when autoCleanup is not a boolean', () => {
+    expect(isSkipFileConfig({ packages: ['react'], autoCleanup: 'yes' })).toBe(
+      false,
+    );
+    expect(isSkipFileConfig({ packages: ['react'], autoCleanup: 1 })).toBe(
+      false,
+    );
   });
 });

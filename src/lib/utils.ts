@@ -1,5 +1,10 @@
 import { MS_PER_DAY } from './constants.js';
-import type { BumpType, NpmRegistryResponse, OutdatedMap } from './types.js';
+import type {
+  BumpType,
+  NpmRegistryResponse,
+  OutdatedMap,
+  SkipFileConfig,
+} from './types.js';
 
 export function parseIsoZ(s?: string): number | null {
   if (!s) {
@@ -8,6 +13,20 @@ export function parseIsoZ(s?: string): number | null {
   const x = s.endsWith('Z') ? `${s.slice(0, -1)}+00:00` : s;
   const t = Date.parse(x);
   return Number.isFinite(t) ? t : null;
+}
+
+/**
+ * Type guard to check if an object has a specific key.
+ *
+ * @param obj - The object to check.
+ * @param key - The key to look for.
+ * @returns True if the object has the specified key.
+ */
+function hasKey<K extends string>(
+  obj: object,
+  key: K,
+): obj is Record<K, unknown> {
+  return key in obj;
 }
 
 /**
@@ -23,15 +42,15 @@ export function isValidNpmRegistryResponse(
     return false;
   }
 
-  if ('dist-tags' in data) {
-    const distTags = (data as { 'dist-tags': unknown })['dist-tags'];
+  if (hasKey(data, 'dist-tags')) {
+    const distTags = data['dist-tags'];
     if (typeof distTags !== 'object' || distTags === null) {
       return false;
     }
   }
 
-  if ('time' in data) {
-    const time = (data as { time: unknown }).time;
+  if (hasKey(data, 'time')) {
+    const time = data.time;
     if (typeof time !== 'object' || time === null) {
       return false;
     }
@@ -67,6 +86,35 @@ export function isOutdatedMap(data: unknown): data is OutdatedMap {
     }
   }
 
+  return true;
+}
+
+/**
+ * Type guard to validate that data is a SkipFileConfig.
+ *
+ * @param data - The data to validate.
+ * @returns True if the data matches the SkipFileConfig structure.
+ */
+export function isSkipFileConfig(data: unknown): data is SkipFileConfig {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return false;
+  }
+  if (!hasKey(data, 'packages')) {
+    return false;
+  }
+  const pkgs = data.packages;
+  if (!Array.isArray(pkgs)) {
+    return false;
+  }
+  if (!pkgs.every((item) => typeof item === 'string')) {
+    return false;
+  }
+  if (hasKey(data, 'reason') && typeof data.reason !== 'string') {
+    return false;
+  }
+  if (hasKey(data, 'autoCleanup') && typeof data.autoCleanup !== 'boolean') {
+    return false;
+  }
   return true;
 }
 

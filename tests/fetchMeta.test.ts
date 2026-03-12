@@ -1,5 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+declare global {
+  // Test-only hooks injected from src/index.ts under test runtime
+  var __testAbortShutdown: (() => void) | undefined;
+  var __testResetShutdown: (() => void) | undefined;
+}
+
 // Mock fetch globally
 const mockFetch = vi.fn();
 global.fetch = mockFetch;
@@ -156,5 +162,25 @@ describe('fetchPackageMeta', () => {
     const { fetchPackageMeta } = await import('../src/index.js');
 
     await expect(fetchPackageMeta('test-package')).rejects.toThrow();
+  });
+
+  it('should throw Operation cancelled when shutdown is aborted during fetch', async () => {
+    mockFetch.mockImplementation(
+      (_url: string, opts?: { signal?: AbortSignal }) =>
+        new Promise((_, reject) => {
+          opts?.signal?.addEventListener?.('abort', () =>
+            reject(Object.assign(new Error('Aborted'), { name: 'AbortError' })),
+          );
+        }),
+    );
+
+    const { fetchPackageMeta } = await import('../src/index.js');
+
+    const p = fetchPackageMeta('test-pkg');
+    await Promise.resolve();
+    globalThis.__testAbortShutdown?.();
+
+    await expect(p).rejects.toThrow('Operation cancelled');
+    globalThis.__testResetShutdown?.();
   });
 });
