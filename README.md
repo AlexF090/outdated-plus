@@ -149,6 +149,20 @@ npm run build
 npm run start
 ```
 
+### Checking this project's dependencies
+
+To run outdated-plus on this repo (self-check of devDependencies):
+
+```bash
+# Standard (uses npm outdated, fast)
+npm run deps:check
+
+# All packages via Registry API (slower, complete)
+npm run deps:check-all
+```
+
+Or use the generic scripts: `npm run outdated-plus` / `npm run outdated-plus:check-all`.
+
 ### Debugging
 
 Source maps (`.map` files) are excluded from the npm package for production use. For debugging purposes, build the project locally:
