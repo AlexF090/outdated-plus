@@ -18,8 +18,8 @@
     "start": "node dist/index.js",
     "test": "npm run build && vitest run",
     "test:watch": "npm run build && vitest",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "format:check": "prettier --check src tests",
     "format:write": "prettier --write src tests",
     "audit": "npm audit",
@@ -59,14 +59,15 @@
   },
   "homepage": "https://github.com/AlexF090/outdated-plus#readme",
   "devDependencies": {
-    "@types/node": "25.4.0",
-    "@typescript-eslint/eslint-plugin": "8.57.0",
-    "@typescript-eslint/parser": "8.57.0",
-    "eslint": "9.39.4",
+    "@eslint/js": "10.0.1",
+    "@types/node": "26.0.1",
+    "@typescript-eslint/eslint-plugin": "8.62.1",
+    "@typescript-eslint/parser": "8.62.1",
+    "eslint": "10.6.0",
     "eslint-config-prettier": "10.1.8",
-    "eslint-plugin-prettier": "5.5.5",
-    "prettier": "3.8.1",
-    "typescript": "5.9.3",
+    "eslint-plugin-prettier": "5.5.6",
+    "prettier": "3.9.4",
+    "typescript": "6.0.3",
     "vitest": "4.1.9"
   }
 }
