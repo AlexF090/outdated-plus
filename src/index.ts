@@ -409,7 +409,10 @@ export class ProgressBar {
 export function getPackageCount(): number {
   const cwd = process.cwd();
   const { dependencies, devDependencies } = readPackageJson(cwd);
-  return Object.keys(dependencies).length + Object.keys(devDependencies).length;
+  return new Set([
+    ...Object.keys(dependencies),
+    ...Object.keys(devDependencies),
+  ]).size;
 }
 
 /**
