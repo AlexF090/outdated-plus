@@ -1,4 +1,12 @@
-import { existsSync, readFileSync, unlinkSync } from 'node:fs';
+import {
+  existsSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { cleanupAndSaveSkipFile, parseArgs } from '../src/args.js';
@@ -139,6 +147,96 @@ describe('parseArgs', () => {
   it('should default to empty skip array when no skip options provided', () => {
     const result = parseArgs(['node', 'script.js']);
     expect(result.skip).toEqual([]);
+  });
+
+  it('should support --key=value syntax', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--sort-by=name',
+      '--concurrency=8',
+      '--order=asc',
+      '--format=md',
+      '--older-than=30',
+    ]);
+    expect(result.sortBy).toBe('name');
+    expect(result.concurrency).toBe(8);
+    expect(result.order).toBe('asc');
+    expect(result.format).toBe('md');
+    expect(result.olderThan).toBe(30);
+  });
+
+  it('should support --skip=value syntax', () => {
+    const result = parseArgs(['node', 'script.js', '--skip=react,vue']);
+    expect(result.skip).toEqual(['react', 'vue']);
+  });
+
+  it('should accumulate multiple --skip flags', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--skip',
+      'react',
+      '--skip',
+      'vue',
+      '--skip',
+      'angular',
+    ]);
+    expect(result.skip).toEqual(['react', 'vue', 'angular']);
+  });
+
+  it('should accumulate mixed --skip and --skip=value flags', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--skip',
+      'react',
+      '--skip=vue,angular',
+    ]);
+    expect(result.skip).toEqual(['react', 'vue', 'angular']);
+  });
+
+  it('should deduplicate skip entries across command line and skip file', () => {
+    const originalCwd = process.cwd();
+    const testDir = mkdtempSync(join(tmpdir(), 'outdated-plus-args-test-'));
+
+    try {
+      writeFileSync(
+        join(testDir, '.outdated-plus-skip'),
+        JSON.stringify({
+          packages: ['react', 'vue'],
+          reason: 'test',
+          autoCleanup: true,
+        }),
+      );
+
+      process.chdir(testDir);
+
+      const result = parseArgs([
+        'node',
+        'script.js',
+        '--skip',
+        'react,angular',
+      ]);
+
+      expect(result.skip).toEqual(['react', 'angular', 'vue']);
+    } finally {
+      process.chdir(originalCwd);
+      rmSync(testDir, { recursive: true, force: true });
+    }
+  });
+
+  it('should handle boolean flags with --key=value args', () => {
+    const result = parseArgs([
+      'node',
+      'script.js',
+      '--show-all',
+      '--sort-by=name',
+      '--iso',
+    ]);
+    expect(result.showAll).toBe(true);
+    expect(result.sortBy).toBe('name');
+    expect(result.iso).toBe(true);
   });
 });
 

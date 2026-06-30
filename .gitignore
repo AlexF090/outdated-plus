@@ -82,3 +82,6 @@ package-lock.json.backup
 # Audit reports
 audit-results.json
 security-report.html
+
+# ai
+.tokensave
