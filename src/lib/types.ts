@@ -75,9 +75,4 @@ export type SkipFileConfig = {
 };
 
 export type BumpType =
-  | 'major'
-  | 'minor'
-  | 'patch'
-  | 'prerelease'
-  | 'same'
-  | 'unknown';
+  'major' | 'minor' | 'patch' | 'prerelease' | 'same' | 'unknown';
