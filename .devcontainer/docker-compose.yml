@@ -1,19 +1,18 @@
 services:
   devcontainer:
-    image: mcr.microsoft.com/devcontainers/typescript-node:20
+    image: mcr.microsoft.com/devcontainers/typescript-node:24
 
     volumes:
       - ..:/workspaces/outdated-plus:cached
       - ${HOME}/.zshrc:/home/node/.zshrc.local:ro
       - ${HOME}/.p10k.zsh:/home/node/.p10k.zsh:ro
       - ${HOME}/.zsh_history:/home/node/.zsh_history
-      # --- Claude Code Config Persistenz (analog curo) ---
+      # Claude Code configuration persistence
       - ${HOME}/.claude:/home/node/.claude:cached
       - ${HOME}/.config/claude:/home/node/.config/claude:cached
-      # .claude.json wird nicht direkt gemountet (Claude Code schreibt atomar
-      # per write-temp+rename, was einen Single-File-Bind-Mount bricht) —
-      # stattdessen als Seed mounten und in post-create-command.sh einmalig
-      # nach ~/.claude.json kopieren.
+      # Claude Code writes .claude.json atomically (write temp file + rename),
+      # which breaks single-file bind mounts. The file is mounted as a seed and
+      # copied to ~/.claude.json once by post-create-command.sh.
       - ${HOME}/.claude.json:/home/node/.claude.json.seed:ro
 
     command: sleep infinity
