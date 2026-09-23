@@ -24,7 +24,7 @@
   "author": "AlexF090",
   "type": "module",
   "bin": {
-    "outdated-plus": "dist/cli.js"
+    "outdated-plus": "dist/bin.js"
   },
   "files": [
     "dist"
