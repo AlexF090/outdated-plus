@@ -28,6 +28,19 @@ const packument = (latest: string, time: Record<string, string>) => ({
   time: { created: '2020-01-01T00:00:00.000Z', ...time },
 });
 
+/**
+ * Never responds until aborted. Holds an active timer like an open socket does,
+ * because `AbortSignal.timeout` alone does not keep the event loop alive.
+ */
+const hangingFetch: typeof fetch = (_input, init) =>
+  new Promise((_resolve, reject) => {
+    const openConnection = setInterval(() => {}, 1_000);
+    init?.signal?.addEventListener('abort', () => {
+      clearInterval(openConnection);
+      reject(init.signal?.reason);
+    });
+  });
+
 describe('parseNpmrc', () => {
   it('parses key value pairs and ignores comments', () => {
     const values = parseNpmrc(
@@ -229,12 +242,6 @@ describe('fetchAllMetadata', () => {
   });
 
   it('reports a timeout per package', async () => {
-    const hangingFetch: typeof fetch = (_input, init) =>
-      new Promise((_resolve, reject) => {
-        init?.signal?.addEventListener('abort', () =>
-          reject(init.signal?.reason),
-        );
-      });
     const results = await fetchAllMetadata(['slow'], {
       configuration: DEFAULT_CONFIGURATION,
       fetch: hangingFetch,
@@ -249,12 +256,6 @@ describe('fetchAllMetadata', () => {
 
   it('stops when the operation is cancelled', async () => {
     const controller = new AbortController();
-    const hangingFetch: typeof fetch = (_input, init) =>
-      new Promise((_resolve, reject) => {
-        init?.signal?.addEventListener('abort', () =>
-          reject(init.signal?.reason),
-        );
-      });
     const pending = fetchAllMetadata(['a', 'b'], {
       configuration: DEFAULT_CONFIGURATION,
       fetch: hangingFetch,
