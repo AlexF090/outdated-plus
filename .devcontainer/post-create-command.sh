@@ -3,7 +3,7 @@ set -e
 
 echo "--- [post-create-command] Installing project dependencies ---"
 cd /workspaces/outdated-plus
-npm ci
+pnpm install --frozen-lockfile
 
 echo "--- [post-create-command] Seeding Claude Code config from host ---"
 if [ -f "${HOME}/.claude.json.seed" ] && [ ! -f "${HOME}/.claude.json" ]; then
