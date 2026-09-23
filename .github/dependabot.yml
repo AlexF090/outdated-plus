@@ -9,6 +9,10 @@ updates:
       include: scope
     labels:
       - dependencies
+    ignore:
+      # Types must match the minimum supported Node.js version in package.json "engines".
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       development-dependencies:
         dependency-type: development
