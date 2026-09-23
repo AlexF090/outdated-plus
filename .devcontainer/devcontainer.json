@@ -7,10 +7,7 @@
 
   "customizations": {
     "vscode": {
-      "extensions": [
-        "esbenp.prettier-vscode",
-        "eamodio.gitlens"
-      ],
+      "extensions": ["esbenp.prettier-vscode", "eamodio.gitlens"],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {

@@ -1,194 +1,111 @@
 # outdated-plus
 
-**Time information for outdated npm packages - displayed compactly in the CLI with trusted sources.**
+[![CI](https://github.com/AlexF090/outdated-plus/actions/workflows/ci.yml/badge.svg)](https://github.com/AlexF090/outdated-plus/actions/workflows/ci.yml)
+[![npm](https://img.shields.io/npm/v/outdated-plus)](https://www.npmjs.com/package/outdated-plus)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-Extends `npm outdated` with publication dates and age information. Shows when packages were published and how old they are - directly in the command line, based on data from the official npm Registry API.
+See how old your dependencies are. `outdated-plus` lists every direct dependency of a project with the installed and the latest version and when each was released.
 
-**🔒 Zero Dependencies** - No runtime dependencies, only Node.js built-in modules for maximum security and independence.
+```
+┌──────────────────┬─────────┬────────────┬──────────┬─────────┬────────────┬─────────┐
+│ Package          │ Current │ Released   │ Age      │ Latest  │ Released   │ Age     │
+├──────────────────┼─────────┼────────────┼──────────┼─────────┼────────────┼─────────┤
+│ typescript (dev) │ 6.0.3   │ 2026-02-25 │ 210 days │ 7.0.2   │ 2026-08-13 │ 41 days │
+│ eslint (dev)     │ 10.8.0  │ 2026-07-25 │ 60 days  │ 10.11.0 │ 2026-09-11 │ 12 days │
+│ prettier (dev)   │ 3.9.8   │ 2026-07-05 │ 80 days  │ 3.9.8   │ 2026-07-05 │ 80 days │
+└──────────────────┴─────────┴────────────┴──────────┴─────────┴────────────┴─────────┘
+```
 
-## Core Features
+- Works with **npm, pnpm, yarn and bun**
+- **Zero runtime dependencies**, only Node.js built-in modules
+- Uses the registry and credentials from your `.npmrc`, including scoped and private registries
 
-### Standard Mode (Default)
+## Usage
+
+Run it in a directory that contains a `package.json` and installed dependencies:
 
 ```bash
-outdated-plus
+npx outdated-plus
+pnpm dlx outdated-plus
+yarn dlx outdated-plus
+bunx outdated-plus
 ```
 
-Uses `npm outdated` to detect outdated packages and enriches them with time information from the npm Registry API. Fast and efficient.
-
-### Full Check
-
-```bash
-outdated-plus --check-all
-```
-
-Bypasses `npm outdated` and checks **all** packages directly via the npm Registry API. Slower, but also shows packages that `npm outdated` might miss.
-
-## Requirements
-
-- **Node.js**: >= 20.0.0 (>= 20.19.0 recommended for development due to vite requirements)
-- **npm**: >= 9.0.0
-
-This tool requires access to:
-
-- Filesystem (reads `package.json`, `package-lock.json`, `.outdated-plus-skip`)
-- Network (fetches package metadata from npm Registry API)
-- npm CLI (for `npm outdated` in standard mode)
-
-## Installation
-
-```bash
-npm install -g outdated-plus
-# or locally
-npm install --save-dev outdated-plus
-```
-
-## Output
-
-### Standard (7 columns)
-
-```text
-Package     Current  Latest  To Latest  Published         Age(d)  #
-----------  -------  ------  ---------  ----------------  ------  -
-package-a   1.0.0    2.0.0   major      2023-11-15 10:00      16  1
-package-b   2.0.0    2.1.0   minor      2023-11-20 10:00      11  2
-```
-
-### With `--wanted` (11 columns)
-
-Additionally shows the "Wanted" version and its publication date.
-
-## Options
-
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--check-all` | Check all packages via HTTP (not just `npm outdated`) | false |
-| `--older-than N` | Only show packages older than N days | 0 |
-| `--show-all` | Show all outdated packages (ignores `--older-than`) | false |
-| `--wanted` | Show Wanted version columns | false |
-| `--format FORMAT` | Output format: `plain` or `md` | `plain` |
-| `--sort-by FIELD` | Sort by: `name`, `age` (alias: `age_latest`), `age_latest`, `age_wanted`, `published` (alias: `published_latest`), `published_latest`, `published_wanted`, `current`, `wanted`, `latest` | `published_latest` |
-| `--order ORDER` | Sort order: `asc` or `desc` | `desc` |
-| `--iso` | Use ISO date format | false |
-| `--concurrency N` | Number of concurrent requests | 12 |
-| `--skip PACKAGES` | Comma-separated list of packages to skip | none |
-| `--quiet` | Suppress progress bar and info messages | false |
-
-## Skip Packages
-
-Skip packages via `--skip` flag or `.outdated-plus-skip` file:
+Or install it as a development dependency and add a script:
 
 ```json
 {
-  "packages": ["react", "react-refresh@7.0.0"],
-  "autoCleanup": true
+  "scripts": {
+    "deps": "outdated-plus"
+  }
 }
 ```
 
-Syntax: `package-name` (skips all versions) or `package-name@version` (only that version).
+Options:
 
-**Auto-Cleanup**: When `autoCleanup: true` (default), skip entries are automatically removed from `.outdated-plus-skip` if packages are no longer outdated or have been updated past the skip version.
+| Option            | Description             |
+| ----------------- | ----------------------- |
+| `-h`, `--help`    | Show the help           |
+| `-v`, `--version` | Show the version number |
 
-## Examples
+## Reading the table
 
-```bash
-# Standard: Fast, uses npm outdated
-outdated-plus
+- **Package**: name from `package.json`, with `(dev)`, `(optional)` or `(peer)` for dependencies outside `dependencies`
+- **Current**: version installed in `node_modules`, or `missing` if the package is not installed
+- **Latest**: version with the `latest` tag in the registry. The changed part is highlighted in the style of `pnpm outdated`:
+  - green: patch update
+  - yellow: minor update
+  - red: major update, or an update of a `0.x` or prerelease version
+- **Released** and **Age**: release date (UTC) of the version and the days since then. Ages of 90 days or more are yellow, one year or more red.
 
-# Check all packages (slower, but complete)
-outdated-plus --check-all
+Rows are sorted by the severity of the available update, then by name. Colors follow the terminal and respect `NO_COLOR` and `FORCE_COLOR`.
 
-# Only packages older than 30 days, as Markdown
-outdated-plus --older-than 30 --format md
+Packages that could not be loaded from the registry are shown with `–` and listed in a warning on stderr.
 
-# Sort by age
-outdated-plus --sort-by age_latest
+## How it works
 
-# Show Wanted versions
-outdated-plus --wanted
+1. Reads `dependencies`, `devDependencies`, `optionalDependencies` and `peerDependencies` from `package.json`. Local, workspace, git and tarball dependencies are skipped; `npm:` aliases are resolved to the real package name.
+2. Resolves the installed version from `node_modules/<name>/package.json`, searching parent directories like Node.js does. This covers hoisted workspaces and the symlinked layouts of pnpm and bun.
+3. Fetches the package metadata from the registry, 12 requests in parallel. The full metadata document is required because only it contains the release time of every version.
 
-# Skip specific packages
-outdated-plus --skip react,typescript@5.0.0
+### Registry configuration
 
-# Combine options: older packages, ISO dates, sorted by age
-outdated-plus --older-than 90 --iso --sort-by age_latest --order asc
+The registry is read from `npm_config_registry`, the project `.npmrc` and `~/.npmrc`, in that order of precedence. Supported keys:
 
-# High concurrency for faster checks
-outdated-plus --check-all --concurrency 20
+```ini
+registry=https://registry.example.com/
+@company:registry=https://npm.company.com/
+//npm.company.com/:_authToken=${NPM_TOKEN}
 ```
 
-## Data Sources
+`${VARIABLE}` references are expanded from the environment. Credentials are only sent to the matching registry, and redirects are not followed.
 
-- **Standard mode**: `npm outdated --json` for outdated packages + npm Registry API (`https://registry.npmjs.org`) for publication dates
-- **`--check-all` mode**: Direct HTTP requests to npm Registry API for all packages from `package.json`
-- **Publication dates**: Come directly from the official npm Registry API, no caches
+### Limitations
 
-All data is fetched at runtime - no cached data.
+- Only the `package.json` in the current directory is checked. For workspaces, run the tool in each package.
+- Yarn Plug'n'Play is not supported because there is no `node_modules` folder. Use `nodeLinker: node-modules` in `.yarnrc.yml`.
 
-## Exit Codes
+## Exit codes
 
-- `0` - Success (packages checked, may or may not have outdated packages)
-- `1` - Error (network failure, parsing error, or other issues)
-
-## Zero Dependencies
-
-**No runtime dependencies** - only Node.js built-in modules (`node:child_process`, `node:fs`, `node:path`, native `fetch`). All dependencies in `package.json` are development dependencies only (TypeScript, ESLint, etc.) and are not included in the published package.
-
-**Benefits:**
-
-- ✅ No dependency vulnerabilities
-- ✅ No supply chain attacks
-- ✅ Independence from external packages
-- ✅ Fully auditable code
+| Code | Meaning                                                                   |
+| ---- | ------------------------------------------------------------------------- |
+| 0    | Table printed                                                             |
+| 1    | Invalid option, no readable `package.json`, or no package could be loaded |
+| 130  | Cancelled with Ctrl+C                                                     |
 
 ## Development
 
-```bash
-npm install
-npm run build
-npm run start
-```
-
-### Checking this project's dependencies
-
-To run outdated-plus on this repo (self-check of devDependencies):
+Requires Node.js 22.18 or later and pnpm.
 
 ```bash
-# Standard (uses npm outdated, fast)
-npm run deps:check
-
-# All packages via Registry API (slower, complete)
-npm run deps:check-all
+pnpm install
+pnpm check   # type check, formatting and tests
+pnpm build   # compile to dist/
+node dist/bin.js
 ```
 
-Or use the generic scripts: `npm run outdated-plus` / `npm run outdated-plus:check-all`.
-
-### Debugging
-
-Source maps (`.map` files) are excluded from the npm package for production use. For debugging purposes, build the project locally:
-
-```bash
-git clone <repository-url>
-cd outdated-plus
-npm install
-npm run build
-# Source maps are now available in dist/ for debugging
-```
+Tests use the built-in `node:test` runner and run directly on the TypeScript sources. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 
-Proprietary License
-
-This software is provided for use only. Modification, forking, and integration into other projects is prohibited. See LICENSE file for details.
-
-For feature requests or bug reports, please open an issue on the repository.
-
-## Troubleshooting
-
-**No packages found**: Ensure you're in a directory with `package.json` and run `npm install` first.
-
-**Network errors**: Check your internet connection and npm registry access. The tool uses `https://registry.npmjs.org`.
-
-**Invalid skip file**: If `.outdated-plus-skip` has invalid JSON, it will be ignored. Fix the JSON syntax to re-enable skip functionality.
-
-**Concurrency limits**: `--concurrency` is automatically clamped between 1-100. Values outside this range are adjusted automatically.
+[MIT](LICENSE)
