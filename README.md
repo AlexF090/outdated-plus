@@ -22,7 +22,7 @@ See how old your dependencies are. `outdated-plus` lists every direct dependency
 
 ## Usage
 
-Run it in a directory that contains a `package.json` and installed dependencies:
+Requires Node.js 22.18 or later. Run it in a directory that contains a `package.json` and installed dependencies:
 
 ```bash
 npx outdated-plus
