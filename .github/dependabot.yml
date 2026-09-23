@@ -1,73 +1,24 @@
 version: 2
 updates:
-  # Enable version updates for npm
-  - package-ecosystem: 'npm'
-    directory: '/'
+  - package-ecosystem: npm
+    directory: /
     schedule:
-      interval: 'weekly'
-      day: 'monday'
-      time: '09:00'
-      timezone: 'Europe/Berlin'
-    open-pull-requests-limit: 10
-    reviewers:
-      - 'AlexF090'
-    assignees:
-      - 'AlexF090'
+      interval: weekly
     commit-message:
-      prefix: 'deps'
-      include: 'scope'
-    versioning-strategy: auto
-    rebase-strategy: auto
-    allow:
-      - dependency-type: 'direct'
-      - dependency-type: 'indirect'
+      prefix: chore
+      include: scope
     labels:
-      - 'dependencies'
-      - 'automated'
-    ignore:
-      - dependency-name: '*'
-        update-types: ['version-update:semver-major']
-    # Group minor and patch updates together
+      - dependencies
     groups:
       development-dependencies:
-        applies-to: version-updates
-        patterns:
-          - '@types/*'
-          - 'eslint*'
-          - 'prettier*'
-          - 'typescript'
-          - 'vitest'
-        update-types:
-          - 'minor'
-          - 'patch'
-      production-dependencies:
-        applies-to: version-updates
-        patterns:
-          - '*'
-        exclude-patterns:
-          - '@types/*'
-          - 'eslint*'
-          - 'prettier*'
-          - 'typescript'
-          - 'vitest'
-        update-types:
-          - 'minor'
-          - 'patch'
-      security-updates-dev:
-        applies-to: security-updates
-        patterns:
-          - '@types/*'
-          - 'eslint*'
-          - 'prettier*'
-          - 'typescript'
-          - 'vitest'
-      security-updates-prod:
-        applies-to: security-updates
-        patterns:
-          - '*'
-        exclude-patterns:
-          - '@types/*'
-          - 'eslint*'
-          - 'prettier*'
-          - 'typescript'
-          - 'vitest'
+        dependency-type: development
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+    labels:
+      - dependencies
