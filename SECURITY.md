@@ -1,74 +1,17 @@
 # Security Policy
 
-## Supported Versions
+## Supported versions
 
-| Version | Supported          |
-| ------- | ------------------ |
-| 1.3.x   | :white_check_mark: |
-| < 1.3   | :x:                |
+Only the latest release receives security fixes.
 
-## Requirements
+## Reporting a vulnerability
 
-- Node.js >=18.0.0
-- npm >=9.0.0
+Please do not open a public issue. Report vulnerabilities through a [private security advisory](https://github.com/AlexF090/outdated-plus/security/advisories/new) and include steps to reproduce. You will receive a response within a few days.
 
-## Reporting a Vulnerability
+## Security measures
 
-If you discover a security vulnerability in this project, please report it responsibly:
-
-1. **Do not** open a public issue
-2. Email the maintainer directly or create a private security advisory on GitHub
-3. Include as much detail as possible about the vulnerability
-4. Allow reasonable time for response before public disclosure
-
-## Security Best Practices
-
-This project follows NPM security best practices:
-
-- All dependencies are pinned to exact versions
-- Lifecycle scripts are disabled by default
-- Provenance statements are enabled
-- Regular security audits are performed
-- Dependencies are kept up to date
-
-### Running Security Checks
-
-```bash
-# Run security audit
-npm run security:check
-
-# Check for vulnerabilities
-npm audit
-
-# Verify package signatures
-npm audit signatures
-
-# Fix automatically fixable issues
-npm audit fix
-```
-
-## Dependencies
-
-This project uses the following security measures:
-
-- **Exact version pinning**: All dependencies use exact versions (no `^` or `~`)
-- **Lockfile**: `package-lock.json` is committed to ensure reproducible builds
-- **Audit signatures**: Package integrity is verified using npm audit signatures
-- **Minimal dependencies**: Only necessary dependencies are included
-
-## Security Configuration
-
-The project uses the following security configuration in `.npmrc`:
-
-```
-ignore-scripts=true
-provenance=true
-save-exact=true
-save-prefix=''
-audit-level=moderate
-strict-peer-deps=true
-engine-strict=true
-```
-
-For more information about NPM security best practices, see:
-https://github.com/bodadotsh/npm-security-best-practices
+- No runtime dependencies. Development dependencies are pinned to exact versions and installed from a committed lockfile.
+- Lifecycle scripts are disabled during installation (`ignore-scripts=true` in `.npmrc`).
+- Releases are published from GitHub Actions through npm trusted publishing with a provenance attestation.
+- GitHub Actions are pinned to commit SHAs.
+- Registry credentials from `.npmrc` are only sent to the registry they are configured for, and redirects are not followed.

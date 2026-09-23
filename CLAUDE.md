@@ -5,66 +5,39 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run build          # tsc compile → dist/
-npm run test           # build + vitest run (all tests)
-npm run lint           # eslint src/
-npm run lint:fix       # eslint --fix
-npm run format:check   # prettier check
-npm run format:write   # prettier write
-npm run ci:local       # lint + format + test + build + security
-npm run test:watch     # build + vitest watch mode
+pnpm check          # typecheck + prettier check + node:test
+pnpm test           # node --test "tests/**/*.test.ts"
+pnpm typecheck      # tsc --noEmit (src and tests)
+pnpm build          # tsc -p tsconfig.build.json → dist/
+pnpm format:write   # prettier --write .
+node dist/bin.js    # run the built CLI in the current directory
 ```
 
-Single test file:
-```bash
-npx vitest run tests/args.test.ts
-```
+Single test file: `node --test tests/semver.test.ts`
 
-Self-check (run the tool on this repo):
-```bash
-npm run deps:check        # standard mode (fast)
-npm run deps:check-all    # HTTP mode (complete)
-```
+## Constraints
+
+- Zero runtime dependencies. Development dependencies: `typescript`, `@types/node`, `prettier` only.
+- Node.js >= 22.18: TypeScript sources run directly via type stripping in tests, so only erasable syntax is allowed (`erasableSyntaxOnly`) and relative imports use `.ts` extensions (rewritten to `.js` on build).
+- ESM (`"type": "module"`).
 
 ## Architecture
 
-Two-file source: `src/index.ts` (CLI orchestration) and `src/args.ts` (argument parsing + skip file management). All shared types, utilities, and sub-modules live in `src/lib/`.
+Data flow: `bin.ts` → `cli.run()` → `project.readDependencies()` → `registry.fetchAllMetadata()` → `rows.buildRows()` + `rows.sortRows()` → `table.renderTable()`.
 
-**Two operational modes:**
-- **Standard** (default): `npm outdated --json` → fetch timestamps for detected outdated packages only
-- **`--check-all`**: HTTP-fetch all packages from `package.json` directly, compare against installed versions from `package-lock.json`
+| File              | Purpose                                                                                                                             |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `src/bin.ts`      | Process entry: reads version, detects color support, wires SIGINT/SIGTERM to an `AbortController`, sets the exit code               |
+| `src/cli.ts`      | `run(options)`: argument parsing (`util.parseArgs`), orchestration, warnings. All I/O is injected via `RunOptions`                  |
+| `src/project.ts`  | Reads `package.json`, skips non-registry specifiers, resolves `npm:` aliases, finds installed versions by walking up `node_modules` |
+| `src/registry.ts` | `.npmrc` parsing, registry and credential resolution, full packument fetch with bounded concurrency and timeout                     |
+| `src/semver.ts`   | SemVer 2.0 parsing, precedence, and `diffVersions` (pnpm-style change classification and highlighted suffix)                        |
+| `src/rows.ts`     | Combines dependencies and metadata into `Row`s, sorts by change severity                                                            |
+| `src/table.ts`    | Renders the box table with `util.styleText`                                                                                         |
+| `src/format.ts`   | Date and age formatting                                                                                                             |
+| `src/types.ts`    | Shared interfaces                                                                                                                   |
 
-**Data flow (`run()`):**
-1. `parseArgs` → `Args`
-2. Either `spawnJson('npm', ['outdated', '--json'])` or `buildOutdatedMapViaHTTP()`
-3. `fetchWithConcurrency()` (lib/concurrency.ts) → `Meta` per package
-4. `buildRows()` → filter → `sortRows()` → `printPlain()` / `printMarkdown()`
+## Tests
 
-**Key lib modules:**
-- `lib/concurrency.ts` — bounded parallel HTTP with `fetchWithConcurrency<T>`; `META_FALLBACK` is the zero value returned on failure
-- `lib/processing.ts` — `buildRows()` maps `OutdatedMap + Meta → Row[]`, applies `--older-than` / `--skip` filters
-- `lib/utils.ts` — `parseSkipEntry`, `shouldSkipPackage`, `isVersionHigher`, registry response validators
-- `lib/errors.ts` — `NetworkError`, `RegistryError` (both extend `Error`), `formatError`
-- `lib/output.ts` — `printPlain`, `printMarkdown`, `printSkippedInfo`
-- `lib/constants.ts` — `NPM_REGISTRY`, `HTTP_REQUEST_TIMEOUT_MS`, concurrency bounds, `NODE_MODULES_REGEX`
-- `lib/types.ts` — shared types (`Args`, `Row`, `Meta`, `OutdatedMap`, etc.)
-- `colors.ts` — ANSI color helpers (`colorize`, `bold`, `dim`); standalone so output.ts stays pure
-
-**Shutdown:** A module-level `shutdownController: AbortController` in `index.ts` is wired to `SIGINT`/`SIGTERM`. Tests expose `__testAbortShutdown` / `__testResetShutdown` via `globalThis` when `VITEST` env is set.
-
-**Skip file (`.outdated-plus-skip`):**
-```json
-{ "packages": ["react", "typescript@5.0.0"], "autoCleanup": true }
-```
-`autoCleanup: true` (default) removes stale entries after each run. `--skip` CLI args are persisted back to this file automatically.
-
-## Test Setup
-
-- Framework: Vitest, `pool: 'forks'`, `maxWorkers: 1`, `isolate: false`
-- Tests import directly from `src/` (TypeScript), not `dist/` — `npm run test` builds first
-- `fetch` is mocked globally at the top of integration/HTTP tests
-- `node:child_process` spawn is mocked in `cli.test.ts`
-
-## Build Output
-
-`dist/` contains compiled JS + `.d.ts`. Only `dist/`, `README.md`, `CHANGELOG.md`, `LICENSE` are published (`.npmignore` excludes `src/`, `tests/`, config files). `dist/index.js` is the CLI entry point (`bin.outdated-plus`).
+- `node:test` + `node:assert/strict`, one file per module in `tests/`.
+- No global mocks: `fetch`, streams, time and directories are passed in. File system tests create temporary directories with `mkdtemp`.

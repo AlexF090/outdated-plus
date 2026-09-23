@@ -1,40 +1,66 @@
 # Changelog
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.3.0] - 2024-12-15
+## Unreleased
+
+### Changed
+
+- **Breaking:** Every direct dependency is always listed in a single table with the columns Package, Current, Released, Age, Latest, Released and Age.
+- **Breaking:** Requires Node.js 22.18 or later.
+- **Breaking:** Released under the MIT license.
+- Installed versions are read from `node_modules`, so npm, pnpm, yarn (node_modules linker) and bun are supported.
+- Registry URLs and credentials are read from `.npmrc`, including scoped registries.
+- Table layout and version highlighting follow `pnpm outdated`.
+- Package is published as ESM.
 
 ### Added
 
-- Initial release with core functionality
-- Support for checking outdated packages via `npm outdated`
-- `--check-all` mode for checking all packages via HTTP
-- Publication date and age information for packages
-- Colored output with terminal support
-- Markdown format output (`--format md`)
-- Sorting options (`--sort-by`, `--order`)
-- Filtering by age (`--older-than`)
-- Wanted version display (`--wanted`)
-- Skip packages functionality (`--skip` and `.outdated-plus-skip` file)
-- Auto-cleanup of skip file entries
-- Progress bar for long-running operations
-- Quiet mode (`--quiet`)
-- ISO date format option (`--iso`)
-- Concurrency control (`--concurrency`)
+- `--help` and `--version` options.
+- Release workflow with npm provenance.
 
-### Security
+### Removed
 
-- Zero runtime dependencies
-- Only Node.js built-in modules used
-- Security audit scripts included
-
-## [1.3.2] - 2025-03-12
+- **Breaking:** Options `--check-all`, `--older-than`, `--show-all`, `--wanted`, `--format`, `--sort-by`, `--order`, `--iso`, `--concurrency`, `--skip` and `--quiet`.
+- **Breaking:** Skip file `.outdated-plus-skip`.
+- Markdown output and progress bar.
 
 ### Fixed
 
-- Dependency updates (production-dependencies group, balanced-match, flatted)
+- The installed version of a package is no longer taken from a nested copy in another package's `node_modules`.
 
-## [Unreleased]
+## 1.3.4 - 2026-08-07
+
+### Changed
+
+- Updated development dependencies.
+
+## 1.3.3 - 2026-06-30
+
+### Changed
+
+- Validation of the skip file configuration and stricter argument parsing.
+- Updated dependencies.
+
+## 1.3.2 - 2026-03-12
+
+### Changed
+
+- Updated dependencies.
+
+## 1.3.1 - 2026-02-05
+
+### Changed
+
+- Improved stability and performance of registry requests.
+
+## 1.3.0 - 2025-12-16
+
+### Added
+
+- Publication date and age of the wanted and latest version for outdated packages.
+- `--check-all` mode that checks every package via the registry.
+- Colored output, Markdown output, sorting, filtering by age and a skip file.
