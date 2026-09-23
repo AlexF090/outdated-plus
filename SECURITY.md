@@ -11,7 +11,7 @@ Please do not open a public issue. Report vulnerabilities through a [private sec
 ## Security measures
 
 - No runtime dependencies. Development dependencies are pinned to exact versions and installed from a committed lockfile.
-- Lifecycle scripts are disabled during installation (`ignore-scripts=true` in `.npmrc`).
+- Lifecycle scripts are disabled during installation (`ignoreScripts: true` in `pnpm-workspace.yaml`).
 - Releases are published from GitHub Actions through npm trusted publishing with a provenance attestation.
 - GitHub Actions are pinned to commit SHAs.
 - Registry credentials from `.npmrc` are only sent to the registry they are configured for, and redirects are not followed.

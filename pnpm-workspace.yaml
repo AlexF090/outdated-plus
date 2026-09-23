@@ -1,0 +1,4 @@
+saveExact: true
+engineStrict: true
+strictPeerDependencies: true
+ignoreScripts: true
