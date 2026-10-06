@@ -39,8 +39,8 @@
     "prepublishOnly": "pnpm check && pnpm build"
   },
   "devDependencies": {
-    "@types/node": "22.20.4",
-    "prettier": "3.9.8",
+    "@types/node": "22.20.5",
+    "prettier": "3.9.9",
     "typescript": "7.0.2"
   },
   "packageManager": "pnpm@11.24.0",
